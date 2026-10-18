@@ -1,0 +1,53 @@
+# Settings, persistence across app launches, reset.
+wait_until scanning = 0 10000
+wait 700
+select Settings
+select Shuffle
+expect shuffle = 1
+press ok
+expect shuffle = 2
+press ok
+expect shuffle = 0
+select Repeat
+press ok
+expect repeat = 2
+select EQ
+expect title = EQ
+expect selected = Off
+select Rock
+expect title = Settings
+expect eq = 17
+select Volume Limit
+select 50%
+expect title = Settings
+expect volume = 50
+select Sound Check
+select Clicker
+select About
+expect title = About
+expect rows = 9
+shot $SHOTS/about.png
+press back
+press back
+press back
+wait 300
+expect screen = apps
+wait 700
+press ok
+wait 1200
+expect screen = menu
+expect eq = 17
+expect repeat = 2
+expect volume = 50
+select Settings
+select Reset Settings
+select Cancel
+expect title = Settings
+expect eq = 17
+select Reset Settings
+select Reset
+expect title = Settings
+expect eq = 0
+expect repeat = 0
+expect volume = 60
+quit

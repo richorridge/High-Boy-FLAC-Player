@@ -217,10 +217,36 @@ def save_image(img, path, kind):
         img.save(path, "JPEG", quality=85)
 
 
+BULK_WORDS = ["Amber", "Blue", "Cobalt", "Delta", "Echo", "Falcon", "Golden", "Harbor",
+              "Indigo", "Jade", "Kepler", "Lunar", "Meadow", "Neon", "Orbit", "Prism",
+              "Quartz", "River", "Silver", "Tidal", "Ultra", "Velvet", "Willow", "Xenon",
+              "Yonder", "Zephyr", "Night", "Signal", "Static", "Summer", "Winter", "Fire"]
+
+
+def make_bulk(root, tmp, n):
+    rng = np.random.default_rng(1234)
+    wav = os.path.join(tmp, "bulk.wav")
+    write_wav(wav, synth(0.4, seed=99), 44100, 16)
+    for i in range(n):
+        title = f"{rng.choice(BULK_WORDS)} {rng.choice(BULK_WORDS)}"
+        if i % 7 == 0:
+            title = f"{i} {title}"  # some titles start with digits (sorted under #)
+        artist = f"{rng.choice(BULK_WORDS)} Band"
+        album = f"{rng.choice(BULK_WORDS)} Sessions"
+        dst = os.path.join(root, "Music", "Bulk", artist, album, f"{i:04d}.flac")
+        os.makedirs(os.path.dirname(dst), exist_ok=True)
+        subprocess.run(["flac", "--silent", "--force", "-0", "-o", dst,
+                        "-T", f"TITLE={title}", "-T", f"ARTIST={artist}",
+                        "-T", f"ALBUM={album}", "-T", f"TRACKNUMBER={i % 12 + 1}",
+                        "-T", "GENRE=Bulk", wav], check=True)
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("out")
     ap.add_argument("--seconds", type=float, default=20.0)
+    ap.add_argument("--bulk", type=int, default=0,
+                    help="also add N short tracks (long lists, fast scrolling)")
     args = ap.parse_args()
     if shutil.which("flac") is None:
         sys.exit("the `flac` encoder is required (apt install flac)")
@@ -257,6 +283,9 @@ def main():
                 body = f.read()
             with open(dst, "wb") as f:
                 f.write(b"ID3\x03\x00\x00\x00\x00\x00\x14" + b"\x00" * 20 + body)
+
+    if args.bulk > 0:
+        make_bulk(root, tmp, args.bulk)
 
     music = os.path.join(root, "Music")
     with open(os.path.join(music, "Road Trip.m3u"), "w", encoding="utf-8") as f:

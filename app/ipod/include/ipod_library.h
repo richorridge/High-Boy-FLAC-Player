@@ -8,6 +8,7 @@
 #ifndef IPOD_LIBRARY_H
 #define IPOD_LIBRARY_H
 
+#include <stdatomic.h>
 #include <stdbool.h>
 #include <stddef.h>
 #include <stdint.h>
@@ -98,10 +99,12 @@ typedef struct {
   uint32_t track; ///< the song, or a representative track of the artist/album
 } ipod_hit_t;
 
+/** @brief Shared between the scanning task and the UI, hence atomic. */
 typedef struct {
-  volatile bool cancel;          ///< set by the caller to abort a scan
-  volatile uint32_t files_found; ///< audio files discovered so far
-  volatile uint32_t files_parsed;
+  bool skip_stats;           ///< input: do not read statistics from `previous`
+  atomic_bool cancel;        ///< set by the caller to abort a scan
+  atomic_uint files_found;   ///< audio files discovered so far
+  atomic_uint files_parsed;
 } ipod_scan_progress_t;
 
 typedef struct ipod_library ipod_library_t;
@@ -120,6 +123,12 @@ void ipod_lib_destroy(ipod_library_t *lib);
  */
 ipod_library_t *
 ipod_lib_scan(const char *root, const ipod_library_t *previous, ipod_scan_progress_t *progress);
+
+/** @brief True when both libraries hold the same files (paths, sizes, mtimes). */
+bool ipod_lib_same_files(const ipod_library_t *a, const ipod_library_t *b);
+
+/** @brief Copy ratings and play counts from @p src to matching paths in @p dst. */
+void ipod_lib_copy_stats(ipod_library_t *dst, const ipod_library_t *src);
 
 /** @brief Persist the library (and statistics) to a binary cache file. */
 bool ipod_lib_save(const ipod_library_t *lib, const char *path);

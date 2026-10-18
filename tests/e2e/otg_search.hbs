@@ -1,0 +1,57 @@
+# On-The-Go (hold OK) and Search.
+wait_until scanning = 0 10000
+wait 700
+select Music
+select Songs
+find Vertex
+hold ok 1000
+expect otg = 1
+find Solar Wind
+hold ok 1000
+expect otg = 2
+press back
+select Albums
+find Electrique
+hold ok 1000
+expect otg = 4
+press back
+select Playlists
+select On-The-Go
+expect rows = 5
+expect selected = Vertex
+select Smorgasbord
+wait 300
+expect song = Smorgasbord
+expect qcount = 4
+expect qpos = 3
+press back
+select Clear Playlist
+expect otg = 0
+expect selected = No Songs
+press back
+press back
+select Search...
+expect title = Search
+# type S U N with the letter strip (A is at the cursor)
+repeat 18 press right
+press ok
+repeat 2 press right
+press ok
+repeat 7 press left
+press ok
+expect selected = key:N query:SUN
+expect rows = 1
+shot $SHOTS/search.png
+press down
+expect selected = Hexagon Sun
+press ok
+wait 300
+expect song = Hexagon Sun
+expect qcount = 1
+press back
+expect title = Search
+press back
+expect selected = key:N query:SUN
+press back
+expect title = Music
+quit

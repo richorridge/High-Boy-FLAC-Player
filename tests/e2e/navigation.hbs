@@ -1,0 +1,86 @@
+# Browsing: first-launch library update, every music menu, playlists.
+wait_until scanning = 0 10000
+wait 700
+expect library = 16
+expect title = iPod
+expect rows = 4
+expect selected = Music
+select Music
+expect title = Music
+expect rows = 8
+select Artists
+expect title = Artists
+expect rows = 6
+find The Polygons
+find Unknown Artist
+select Zoe Bronte
+expect title = Zoe Bronte
+expect rows = 2
+expect selected = All Songs
+select Electrique
+expect rows = 2
+expect selected = Ca Va
+find Smorgasbord
+press back
+press back
+press back
+expect title = Music
+select Albums
+expect rows = 7
+select Northern Lights
+expect rows = 3
+expect selected = Polar Night
+find Solar Wind
+press back
+press back
+select Compilations
+expect rows = 2
+select Summer Mix 2005
+expect rows = 3
+expect selected = Byte Me
+press back
+press back
+select Genres
+expect rows = 5
+select Ambient
+expect title = Ambient
+expect rows = 2
+select Various Artists
+expect rows = 2
+select All Songs
+expect rows = 1
+expect selected = Mono Lake
+press back
+press back
+press back
+press back
+select Composers
+expect rows = 2
+select J. S. Bachelor
+expect rows = 2
+expect selected = Espresso Etude
+press back
+press back
+select Songs
+expect rows = 16
+expect selected = Acute Angles
+shot $SHOTS/songs.png
+press back
+select Playlists
+expect rows = 6
+select Road Trip
+# relative, backslash, ./ and absolute /sdcard entries all resolve; one is missing
+expect rows = 4
+expect selected = Hexagon Sun
+press back
+select On-The-Go
+expect rows = 1
+expect selected = No Songs
+press back
+select Recently Added
+expect rows = 16
+press back
+press back
+press back
+expect title = iPod
+quit

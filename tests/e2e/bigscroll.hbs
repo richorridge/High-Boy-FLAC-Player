@@ -1,0 +1,16 @@
+# A 416-song card: accelerated scrolling and the fast-scroll index letter.
+wait_until scanning = 0 20000
+wait 700
+expect library = 416
+select Music
+select Songs
+expect rows = 416
+down down
+wait 2500
+expect overlay != 
+expect index > 60
+shot $SHOTS/fastscroll.png
+up down
+wait 900
+expect overlay = 
+quit

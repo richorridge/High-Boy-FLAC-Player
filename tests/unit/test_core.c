@@ -370,6 +370,25 @@ static void test_library(void) {
     CHECK(a2 >= 0 && ipod_lib_track(rescan, (uint32_t)a2)->rating == 5);
   }
 
+  // Background rescans leave statistics alone; they are merged afterwards.
+  ipod_scan_progress_t prog3 = {.skip_stats = true};
+  ipod_library_t *bg = ipod_lib_scan(lib_path("Music"), loaded, &prog3);
+  CHECK(bg != NULL && prog3.files_parsed == 1);
+  if (bg != NULL && rescan != NULL) {
+    int a3 = find_title(bg, "Vertex");
+    CHECK(a3 >= 0 && ipod_lib_track(bg, (uint32_t)a3)->play_count == 0);
+    CHECK(ipod_lib_same_files(bg, rescan));
+    CHECK(ipod_lib_same_files(rescan, loaded));
+    ipod_lib_copy_stats(bg, rescan);
+    CHECK(a3 >= 0 && ipod_lib_track(bg, (uint32_t)a3)->play_count == 5);
+    CHECK(a3 >= 0 && ipod_lib_track(bg, (uint32_t)a3)->rating == 5);
+  }
+  ipod_library_t *empty_lib = ipod_lib_scan(lib_path("nope"), NULL, NULL);
+  CHECK(!ipod_lib_same_files(bg, empty_lib));
+  CHECK(!ipod_lib_same_files(bg, NULL));
+  ipod_lib_destroy(empty_lib);
+  ipod_lib_destroy(bg);
+
   // Corrupted caches are rejected rather than half-loaded.
   FILE *f = fopen(cache, "r+b");
   if (f != NULL) {

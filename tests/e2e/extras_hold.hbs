@@ -1,0 +1,41 @@
+# Extras (Clock, Stopwatch) and the HOLD switch (OK + BACK held).
+wait_until scanning = 0 10000
+wait 700
+select Extras
+select Clock
+expect title = Clock
+shot $SHOTS/clock.png
+press back
+select Stopwatch
+expect title = Stopwatch
+press ok
+wait 1300
+press down
+press ok
+shot $SHOTS/stopwatch.png
+press back
+press back
+expect title = iPod
+expect index = 1
+down ok
+down back
+wait 1000
+up ok
+up back
+wait 200
+expect hold = 1
+press down
+expect index = 1
+press ok
+expect title = iPod
+down ok
+down back
+wait 1000
+up ok
+up back
+wait 200
+expect hold = 0
+expect screen = menu
+press down
+expect index = 2
+quit

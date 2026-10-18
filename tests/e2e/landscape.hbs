@@ -1,0 +1,13 @@
+# args: --landscape
+wait_until scanning = 0 10000
+wait 700
+expect rows = 4
+shot $SHOTS/landscape_menu.png
+select Music
+select Albums
+select Northern Lights
+select Polar Night
+wait_until art = 1 3000
+shot $SHOTS/landscape_nowplaying.png
+expect song = Polar Night
+quit

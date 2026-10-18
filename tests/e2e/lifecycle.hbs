@@ -1,0 +1,45 @@
+# args: --launcher
+# Leave and re-enter the app while playing; new files on the card are picked up.
+wait 700
+expect screen = apps
+press ok
+wait_until scanning = 0 10000
+wait 700
+select Music
+select Songs
+select Vertex
+wait 500
+expect state = playing
+press back
+press back
+press back
+press back
+wait 400
+expect screen = apps
+expect streaming = 0
+wait 400
+press ok
+wait 1200
+expect screen = menu
+expect library = 16
+expect state = stopped
+press back
+wait 600
+mkdir /sdcard/Music/New
+cp /sdcard/Music/Zoë Brontë/Électrique/01 Ça Va.flac => /sdcard/Music/New/Fresh.flac
+press ok
+wait_until library = 17 8000
+# TentacleOS ignores input for 500 ms after a screen switch
+wait 600
+expect title = iPod
+select Music
+select Songs
+expect rows = 17
+press back
+press back
+press back
+wait 600
+press ok
+wait 1200
+expect library = 17
+quit

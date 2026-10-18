@@ -46,6 +46,7 @@ add_library(ipod_core STATIC
   ${APP_DIR}/ipod_queue.c
   ${APP_DIR}/ipod_dsp.c
   ${APP_DIR}/ipod_settings.c
+  ${APP_DIR}/ipod_menu.c
 )
 target_include_directories(ipod_core PUBLIC ${APP_DIR}/include)
 target_compile_options(ipod_core PRIVATE ${APP_WARNINGS})
@@ -90,4 +91,25 @@ set_tests_properties(player_bitexact player_transport PROPERTIES
 
 if(HB_BUILD_SIM)
   add_subdirectory(sim)
+
+  # End-to-end UI tests: scripted button presses against the simulator.
+  set(TEST_LIB_BIG ${CMAKE_BINARY_DIR}/testlib_big)
+  add_test(NAME make_test_library_big
+           COMMAND ${Python3_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/tools/make_test_library.py
+                   ${TEST_LIB_BIG} --seconds 2 --bulk 400)
+  set_tests_properties(make_test_library_big PROPERTIES FIXTURES_SETUP testlib_big)
+  set(E2E_DIR ${CMAKE_CURRENT_SOURCE_DIR}/tests/e2e)
+  foreach(suite navigation playback settings otg_search extras_hold lifecycle landscape bigscroll)
+    if(suite STREQUAL "bigscroll")
+      set(card ${TEST_LIB_BIG})
+      set(fixture testlib_big)
+    else()
+      set(card ${TEST_LIB})
+      set(fixture testlib)
+    endif()
+    add_test(NAME e2e_${suite}
+             COMMAND ${E2E_DIR}/run_e2e.sh $<TARGET_FILE:hb_sim> ${E2E_DIR}/${suite}.hbs ${card}
+                     ${CMAKE_BINARY_DIR}/e2e_shots)
+    set_tests_properties(e2e_${suite} PROPERTIES FIXTURES_REQUIRED ${fixture} TIMEOUT 300)
+  endforeach()
 endif()

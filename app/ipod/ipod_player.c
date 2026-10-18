@@ -7,6 +7,7 @@
 
 #include "ipod_player.h"
 
+#include <stdatomic.h>
 #include <stdlib.h>
 #include <string.h>
 
@@ -65,7 +66,7 @@ static bool s_dsp_dirty;
 static bool s_stats_dirty;
 static uint32_t s_play_seq;
 static uint32_t s_stream_rate; ///< 0 while the I2S stream is closed
-static volatile bool s_click;
+static atomic_bool s_click; ///< set by the UI thread, consumed by the decoder
 
 static void player_task(void *arg);
 
@@ -343,7 +344,7 @@ void ipod_player_click(void) {
     unlock();
   }
   if (streaming)
-    s_click = true; // the driver mutes UI sounds while streaming: mix it in instead
+    atomic_store(&s_click, true); // the driver mutes UI sounds while streaming: mix it in
   else
     audio_click();
 }
@@ -646,10 +647,8 @@ static void player_task(void *arg) {
 
     const size_t want = (size_t)CHUNK_OUT_SAMPLES * d.dsp.decim;
     const size_t got = (size_t)drflac_read_pcm_frames_s16(d.fl, want, d.pcm);
-    if (s_click) {
-      s_click = false;
+    if (atomic_exchange(&s_click, false))
       ipod_dsp_click(&d.dsp);
-    }
     const size_t n = ipod_dsp_process(&d.dsp, d.pcm, got, d.fl->channels, d.out);
     if (n > 0)
       audio_i2s_stream_write(d.out, (int)n);

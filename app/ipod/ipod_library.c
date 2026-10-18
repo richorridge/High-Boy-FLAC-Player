@@ -187,8 +187,9 @@ ipod_lib_scan(const char *root, const ipod_library_t *previous, ipod_scan_progre
   scan_dir(&ctx, path, len, 0);
   sort_playlists(lib);
 
-  if (progress->cancel || lib->is_oom || !build_path_index(lib)) {
-    ESP_LOGW(TAG, "scan aborted (cancel=%d oom=%d)", (int)progress->cancel, (int)lib->is_oom);
+  const bool cancelled = atomic_load(&progress->cancel);
+  if (cancelled || lib->is_oom || !build_path_index(lib)) {
+    ESP_LOGW(TAG, "scan aborted (cancel=%d oom=%d)", (int)cancelled, (int)lib->is_oom);
     ipod_lib_destroy(lib);
     return NULL;
   }
@@ -197,11 +198,14 @@ ipod_lib_scan(const char *root, const ipod_library_t *previous, ipod_scan_progre
            root,
            (unsigned)lib->ntracks,
            (unsigned)lib->nplaylists,
-           (unsigned)progress->files_parsed);
+           (unsigned)atomic_load(&progress->files_parsed));
   return lib;
 }
 
-static void rec_from_track(const ipod_library_t *lib, const ipod_track_t *t, track_rec_t *rec) {
+static void rec_from_track(const ipod_library_t *lib,
+                           const ipod_track_t *t,
+                           bool with_stats,
+                           track_rec_t *rec) {
   rec->path = ipod_lib_str(lib, t->path);
   rec->title = ipod_lib_str(lib, t->title);
   rec->artist = ipod_lib_str(lib, t->artist);
@@ -209,18 +213,39 @@ static void rec_from_track(const ipod_library_t *lib, const ipod_track_t *t, tra
   rec->album_artist = ipod_lib_str(lib, t->album_artist);
   rec->genre = ipod_lib_str(lib, t->genre);
   rec->composer = ipod_lib_str(lib, t->composer);
-  rec->num = *t;
+  // Field by field: the statistics may be written concurrently by the player
+  // when the caller asked us not to touch them.
+  memset(&rec->num, 0, sizeof(rec->num));
+  rec->num.duration_ms = t->duration_ms;
+  rec->num.file_size = t->file_size;
+  rec->num.mtime = t->mtime;
+  rec->num.picture_offset = t->picture_offset;
+  rec->num.picture_size = t->picture_size;
+  rec->num.sample_rate = t->sample_rate;
+  rec->num.track_no = t->track_no;
+  rec->num.disc_no = t->disc_no;
+  rec->num.year = t->year;
+  rec->num.rg_track_cdb = t->rg_track_cdb;
+  rec->num.rg_album_cdb = t->rg_album_cdb;
+  rec->num.channels = t->channels;
+  rec->num.bits_per_sample = t->bits_per_sample;
+  rec->num.flags = t->flags;
+  if (with_stats) {
+    rec->num.rating = t->rating;
+    rec->num.play_count = t->play_count;
+    rec->num.last_played = t->last_played;
+  }
 }
 
 static void scan_file(scan_ctx_t *ctx, const char *path, const struct stat *st) {
-  ctx->progress->files_found++;
+  atomic_fetch_add(&ctx->progress->files_found, 1);
   const uint32_t size = (uint32_t)st->st_size;
   const uint32_t mtime = (uint32_t)st->st_mtime;
   uint32_t prev_idx = 0;
   if (ctx->prev != NULL && ipod_lib_find_path(ctx->prev, path, &prev_idx)) {
     const ipod_track_t *old = ipod_lib_track(ctx->prev, prev_idx);
     track_rec_t rec;
-    rec_from_track(ctx->prev, old, &rec);
+    rec_from_track(ctx->prev, old, !ctx->progress->skip_stats, &rec);
     rec.path = path;
     if (old->file_size == size && old->mtime == mtime) {
       add_track(ctx->lib, &rec);
@@ -234,7 +259,7 @@ static void scan_file(scan_ctx_t *ctx, const char *path, const struct stat *st) 
     ctx->lib->is_oom = true;
     return;
   }
-  ctx->progress->files_parsed++;
+  atomic_fetch_add(&ctx->progress->files_parsed, 1);
   if (!ipod_meta_read_flac(path, meta)) {
     ESP_LOGW(TAG, "not a valid FLAC: %s", path);
     free(meta);
@@ -266,7 +291,8 @@ static void scan_file(scan_ctx_t *ctx, const char *path, const struct stat *st) 
   rec.num.bits_per_sample = meta->bits_per_sample;
   rec.num.flags = meta->is_compilation ? IPOD_TRACK_COMPILATION : 0;
   // A re-tagged file keeps its listening statistics.
-  if (ctx->prev != NULL && ipod_lib_find_path(ctx->prev, path, &prev_idx)) {
+  if (ctx->prev != NULL && !ctx->progress->skip_stats &&
+      ipod_lib_find_path(ctx->prev, path, &prev_idx)) {
     const ipod_track_t *old = ipod_lib_track(ctx->prev, prev_idx);
     rec.num.rating = old->rating;
     rec.num.play_count = old->play_count;
@@ -293,7 +319,8 @@ static void scan_dir(scan_ctx_t *ctx, char *path, size_t len, int depth) {
   if (dir == NULL)
     return;
   struct dirent *de;
-  while ((de = readdir(dir)) != NULL && !ctx->progress->cancel && !ctx->lib->is_oom) {
+  while ((de = readdir(dir)) != NULL && !atomic_load(&ctx->progress->cancel) &&
+         !ctx->lib->is_oom) {
     const char *name = de->d_name;
     if (strcmp(name, ".") == 0 || strcmp(name, "..") == 0)
       continue;
@@ -317,6 +344,37 @@ static void scan_dir(scan_ctx_t *ctx, char *path, size_t len, int depth) {
     path[len] = '\0';
   }
   closedir(dir);
+}
+
+bool ipod_lib_same_files(const ipod_library_t *a, const ipod_library_t *b) {
+  if (a == NULL || b == NULL || a->ntracks != b->ntracks || a->nplaylists != b->nplaylists)
+    return false;
+  for (uint32_t i = 0; i < a->ntracks; i++) {
+    const ipod_track_t *ta = &a->tracks[i];
+    uint32_t j = 0;
+    if (!ipod_lib_find_path(b, ipod_lib_str(a, ta->path), &j))
+      return false;
+    if (b->tracks[j].file_size != ta->file_size || b->tracks[j].mtime != ta->mtime)
+      return false;
+  }
+  for (uint32_t i = 0; i < a->nplaylists; i++) {
+    if (strcmp(ipod_lib_str(a, a->pl_paths[i]), ipod_lib_str(b, b->pl_paths[i])) != 0)
+      return false;
+  }
+  return true;
+}
+
+void ipod_lib_copy_stats(ipod_library_t *dst, const ipod_library_t *src) {
+  if (dst == NULL || src == NULL)
+    return;
+  for (uint32_t i = 0; i < dst->ntracks; i++) {
+    uint32_t j = 0;
+    if (!ipod_lib_find_path(src, ipod_lib_str(dst, dst->tracks[i].path), &j))
+      continue;
+    dst->tracks[i].rating = src->tracks[j].rating;
+    dst->tracks[i].play_count = src->tracks[j].play_count;
+    dst->tracks[i].last_played = src->tracks[j].last_played;
+  }
 }
 
 // ---------------------------------------------------------------------------

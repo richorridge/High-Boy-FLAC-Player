@@ -1,0 +1,80 @@
+# Playback and the Now Playing controls.
+wait_until scanning = 0 10000
+wait 700
+select Music
+select Albums
+select Square Waves
+expect selected = Triangle Theory
+select Hexagon Sun
+wait 400
+expect screen = nowplaying
+expect title = Now Playing
+expect song = Hexagon Sun
+expect state = playing
+expect qpos = 1
+expect qcount = 4
+wait_until art = 1 3000
+shot $SHOTS/nowplaying.png
+# RIGHT = next song, LEFT early in a song = previous song
+press right
+wait_until song = Vertex 2000
+press left
+wait_until song = Hexagon Sun 2000
+# holding RIGHT fast-forwards within the song (release before the first repeat)
+hold right 830
+expect song = Hexagon Sun
+expect pos >= 1500
+# holding BACK is PLAY/PAUSE
+hold back 1000
+expect state = paused
+wait 400
+hold back 1000
+expect state = playing
+# UP / DOWN change the volume
+expect volume = 60
+repeat 3 press up
+expect volume = 72
+expect speaker_volume = 72
+repeat 3 press down
+expect volume = 60
+# the centre button cycles scrubber -> rating -> shuffle -> volume
+press ok
+expect mode = scrub
+press ok
+expect mode = rating
+repeat 3 press up
+expect rating = 3
+shot $SHOTS/rating.png
+press ok
+expect mode = shuffle
+press up
+expect shuffle = 1
+expect qcount = 4
+press down
+expect shuffle = 0
+press ok
+expect mode = volume
+# the list plays out: back to the song list, playback stopped
+wait_until screen = menu 20000
+expect title = Square Waves
+expect state = stopped
+press back
+press back
+press back
+expect title = iPod
+expect rows = 4
+# Shuffle Songs plays everything shuffled
+select Shuffle Songs
+wait 300
+expect screen = nowplaying
+expect qcount = 16
+expect shuffle = 1
+hold back 1000
+expect state = paused
+press back
+expect title = iPod
+expect rows = 5
+select Now Playing
+expect screen = nowplaying
+expect state = paused
+quit
