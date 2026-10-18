@@ -9,6 +9,7 @@
 
 #include <ctype.h>
 #include <dirent.h>
+#include <errno.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -16,6 +17,7 @@
 
 #include "esp_log.h"
 
+#include "ipod_fs.h"
 #include "ipod_meta.h"
 #include "ipod_text.h"
 
@@ -254,12 +256,13 @@ static void scan_file(scan_ctx_t *ctx, const char *path, const struct stat *st) 
   const uint32_t size = (uint32_t)st->st_size;
   const uint32_t mtime = (uint32_t)st->st_mtime;
   uint32_t prev_idx = 0;
-  if (ctx->prev != NULL && ipod_lib_find_path(ctx->prev, path, &prev_idx)) {
+  const bool has_prev = ctx->prev != NULL && ipod_lib_find_path(ctx->prev, path, &prev_idx);
+  if (has_prev) {
     const ipod_track_t *old = ipod_lib_track(ctx->prev, prev_idx);
-    track_rec_t rec;
-    rec_from_track(ctx->prev, old, !ctx->progress->skip_stats, &rec);
-    rec.path = path;
     if (old->file_size == size && old->mtime == mtime) {
+      track_rec_t rec;
+      rec_from_track(ctx->prev, old, !ctx->progress->skip_stats, &rec);
+      rec.path = path;
       add_track(ctx->lib, &rec);
       return;
     }
@@ -272,7 +275,22 @@ static void scan_file(scan_ctx_t *ctx, const char *path, const struct stat *st) 
     return;
   }
   atomic_fetch_add(&ctx->progress->files_parsed, 1);
-  if (!ipod_meta_read_flac(path, meta)) {
+  const ipod_meta_status_t status = ipod_meta_read(path, meta);
+  if (status == IPOD_META_BUSY) {
+    // Every SD file slot is in use elsewhere: a busy card is not a broken
+    // file, so keep what we knew about the song rather than dropping it.
+    atomic_fetch_add(&ctx->progress->files_busy, 1);
+    if (has_prev) {
+      track_rec_t rec;
+      rec_from_track(
+          ctx->prev, ipod_lib_track(ctx->prev, prev_idx), !ctx->progress->skip_stats, &rec);
+      rec.path = path;
+      add_track(ctx->lib, &rec);
+    }
+    free(meta);
+    return;
+  }
+  if (status != IPOD_META_OK) {
     ESP_LOGW(TAG, "not a valid FLAC: %s", path);
     free(meta);
     return;
@@ -452,7 +470,7 @@ bool ipod_lib_save(const ipod_library_t *lib, const char *path) {
     return false;
   char tmp[PATH_BUF_LEN];
   snprintf(tmp, sizeof(tmp), "%s.tmp", path);
-  FILE *f = fopen(tmp, "wb");
+  FILE *f = ipod_fopen(tmp, "wb", IPOD_FS_WAIT_UI_MS);
   if (f == NULL) {
     ESP_LOGW(TAG, "cannot write %s", tmp);
     return false;
@@ -491,7 +509,7 @@ bool ipod_lib_save(const ipod_library_t *lib, const char *path) {
 }
 
 ipod_library_t *ipod_lib_load(const char *path) {
-  FILE *f = fopen(path, "rb");
+  FILE *f = ipod_fopen(path, "rb", IPOD_FS_WAIT_UI_MS);
   if (f == NULL)
     return NULL;
   ipod_library_t *lib = ipod_lib_create();
@@ -890,12 +908,25 @@ size_t ipod_lib_playlist_tracks(const ipod_library_t *lib, size_t index, uint32_
 }
 
 size_t ipod_lib_read_m3u(const ipod_library_t *lib, const char *m3u_path, uint32_t **out) {
+  return ipod_lib_read_m3u_wait(lib, m3u_path, IPOD_FS_WAIT_UI_MS, NULL, out);
+}
+
+size_t ipod_lib_read_m3u_wait(const ipod_library_t *lib,
+                              const char *m3u_path,
+                              uint32_t wait_ms,
+                              bool *out_is_busy,
+                              uint32_t **out) {
   *out = NULL;
+  if (out_is_busy != NULL)
+    *out_is_busy = false;
   if (lib == NULL || m3u_path == NULL)
     return 0;
-  FILE *f = fopen(m3u_path, "r");
-  if (f == NULL)
+  FILE *f = ipod_fopen(m3u_path, "r", wait_ms);
+  if (f == NULL) {
+    if (out_is_busy != NULL)
+      *out_is_busy = ipod_fs_is_busy(errno);
     return 0;
+  }
   char *line = malloc(LINE_BUF_LEN);
   char *full = malloc(PATH_BUF_LEN);
   size_t cap = TRACKS_INITIAL;
@@ -975,7 +1006,7 @@ bool ipod_lib_write_m3u(const ipod_library_t *lib,
                         const char *m3u_path,
                         const uint32_t *tracks,
                         size_t count) {
-  FILE *f = fopen(m3u_path, "w");
+  FILE *f = ipod_fopen(m3u_path, "w", IPOD_FS_WAIT_UI_MS);
   if (f == NULL)
     return false;
   bool ok = fputs("#EXTM3U\n", f) >= 0;

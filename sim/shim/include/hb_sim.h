@@ -32,6 +32,9 @@ void hb_audio_get_stats(hb_audio_stats_t *out);
 /** @brief Map the device's /sdcard mount point onto a host folder. */
 void hb_fs_set_sd_root(const char *host_dir);
 
+/** @brief Card files currently open (limited to HB_MAX_FILES, default 5). */
+int hb_fs_open_count(void);
+
 #ifdef __cplusplus
 }
 #endif

@@ -48,14 +48,21 @@ typedef struct {
   char picture_mime[IPOD_META_MIME_MAX];
 } ipod_meta_t;
 
+typedef enum {
+  IPOD_META_OK = 0,
+  IPOD_META_NOT_FLAC, ///< missing, unreadable or not a FLAC stream
+  IPOD_META_BUSY,     ///< every SD file slot was taken: try again later
+} ipod_meta_status_t;
+
 /**
  * @brief Parse the metadata blocks of a FLAC file.
  *
  * Only the header is read; audio frames are never touched, so this is cheap
  * enough to run over a whole SD card. A leading ID3v2 tag is skipped.
- *
- * @return true if the file is a FLAC stream with a valid STREAMINFO block.
  */
+ipod_meta_status_t ipod_meta_read(const char *path, ipod_meta_t *out_meta);
+
+/** @brief ipod_meta_read() == IPOD_META_OK. */
 bool ipod_meta_read_flac(const char *path, ipod_meta_t *out_meta);
 
 /** @brief Duration in milliseconds derived from STREAMINFO (0 if unknown). */

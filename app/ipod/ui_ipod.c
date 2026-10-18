@@ -21,6 +21,7 @@
 
 #include "ui_ipod.h"
 
+#include <errno.h>
 #include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -38,6 +39,7 @@
 #include "input_manager.h"
 #include "ipod_art.h"
 #include "ipod_dsp.h"
+#include "ipod_fs.h"
 #include "ipod_library.h"
 #include "ipod_menu.h"
 #include "ipod_player.h"
@@ -122,6 +124,7 @@
 #define STOPWATCH_SCALE   512
 #define STOPWATCH_LAPS    4
 #define SCAN_TASK_STACK   12288
+#define OTG_RETRY_MS      1000
 #define SCAN_WAIT_MS      3000
 #define NO_GROUP          0u
 
@@ -270,6 +273,10 @@ typedef struct {
   uint32_t last_end_seq;
   uint32_t list_track_seq;
   bool is_cache_dirty;
+  bool is_otg_pending;     ///< the card was busy when On-The-Go was loaded
+  bool is_settings_locked; ///< settings file unreadable (card busy): don't overwrite
+  bool is_cache_locked;    ///< library cache unreadable (card busy): don't overwrite
+  uint32_t otg_retry_at;
 
   // input
   bool is_ok_long;
@@ -445,23 +452,69 @@ static lv_obj_t *mk_lock_icon(lv_obj_t *parent, uint32_t color, int32_t scale) {
 // Storage
 
 static void save_otg(void) {
+  if (s.is_otg_pending)
+    return; // the saved list is not loaded yet: writing now would erase it
   if (!ipod_lib_write_m3u(s.lib, OTG_PATH, s.menu.otg, s.menu.otg_count))
     ESP_LOGW(TAG, "could not save On-The-Go");
 }
 
-static void load_otg(void) {
+// Load On-The-Go from the card. When every SD file slot is busy the list is
+// not empty, just unreadable for now: keep trying from the refresh timer and
+// put any songs added in the meantime after the saved ones.
+static void load_otg(uint32_t wait_ms) {
   uint32_t *tracks = NULL;
-  size_t n = ipod_lib_read_m3u(s.lib, OTG_PATH, &tracks);
+  bool is_busy = false;
+  size_t n = ipod_lib_read_m3u_wait(s.lib, OTG_PATH, wait_ms, &is_busy, &tracks);
+  if (is_busy) {
+    if (!s.is_otg_pending)
+      ESP_LOGW(TAG, "SD card busy: On-The-Go will load shortly");
+    s.is_otg_pending = true;
+    return;
+  }
+  const bool had_pending = s.is_otg_pending;
+  const size_t added = had_pending ? s.menu.otg_count : 0;
+  if (added > 0) {
+    uint32_t *all = realloc(tracks, (n + added) * sizeof(uint32_t));
+    if (all != NULL) {
+      memcpy(all + n, s.menu.otg, added * sizeof(uint32_t));
+      tracks = all;
+      n += added;
+    }
+  }
   ipod_menu_set_otg(&s.menu, tracks, n);
   free(tracks);
+  s.is_otg_pending = false;
+  if (added > 0)
+    save_otg();
+}
+
+// After a rescan, carry On-The-Go over by path (no file I/O needed).
+static uint32_t *otg_remap(const ipod_library_t *from, const ipod_library_t *to, size_t *out_n) {
+  *out_n = 0;
+  if (s.menu.otg_count == 0)
+    return NULL;
+  uint32_t *map = malloc(s.menu.otg_count * sizeof(uint32_t));
+  if (map == NULL)
+    return NULL;
+  for (size_t i = 0; i < s.menu.otg_count; i++) {
+    const ipod_track_t *t = ipod_lib_track(from, s.menu.otg[i]);
+    uint32_t idx = 0;
+    if (t != NULL && ipod_lib_find_path(to, ipod_lib_str(from, t->path), &idx))
+      map[(*out_n)++] = idx;
+  }
+  return map;
 }
 
 static void save_settings(void) {
+  if (s.is_settings_locked)
+    return; // never replace settings we could not read
   if (!ipod_settings_save(&s.settings, SETTINGS_PATH))
     ESP_LOGW(TAG, "could not save settings");
 }
 
 static void save_cache(void) {
+  if (s.is_cache_locked)
+    return; // never replace the play counts and ratings we could not read
   if (ipod_lib_save(s.lib, CACHE_PATH))
     s.is_cache_dirty = false;
   else
@@ -1463,10 +1516,13 @@ static void apply_library(ipod_library_t *fresh) {
   art_release();
   s.art_req = 0;
   s.art_track = IPOD_NO_TRACK;
+  size_t otg_n = 0;
+  uint32_t *otg = otg_remap(old, fresh, &otg_n);
   s.lib = fresh;
   ipod_menu_set_library(&s.menu, fresh);
+  ipod_menu_set_otg(&s.menu, otg, otg_n);
+  free(otg);
   ipod_lib_destroy(old);
-  load_otg();
   s.is_cache_dirty = true;
   save_cache();
   ESP_LOGI(TAG, "library updated: %u songs", (unsigned)ipod_lib_count(s.lib));
@@ -1982,6 +2038,10 @@ static void timer_cb(lv_timer_t *t) {
   }
   if (ipod_player_take_stats_dirty())
     s.is_cache_dirty = true;
+  if (s.is_otg_pending && (int32_t)(now - s.otg_retry_at) >= 0) {
+    s.otg_retry_at = now + OTG_RETRY_MS;
+    load_otg(0); // never stall the screen waiting for the card
+  }
 
   header_update();
   art_poll();
@@ -2044,9 +2104,28 @@ void ui_ipod_open(void) {
 
   mkdir(IPOD_DIR, 0775);
   ipod_settings_defaults(&s.settings);
-  ipod_settings_load(&s.settings, SETTINGS_PATH);
-
-  s.lib = ipod_lib_load(CACHE_PATH);
+  // A busy card (every SD file slot taken) is not the same as a missing file:
+  // give it a few seconds, and if it stays busy run on defaults this session
+  // without overwriting what is on the card.
+  bool is_busy = false;
+  for (uint32_t waited = 0;; waited += IPOD_FS_WAIT_UI_MS) {
+    errno = 0;
+    const bool loaded = ipod_settings_load(&s.settings, SETTINGS_PATH);
+    is_busy = !loaded && ipod_fs_is_busy(errno);
+    if (!is_busy || waited >= IPOD_FS_WAIT_WORKER_MS)
+      break;
+  }
+  s.is_settings_locked = is_busy;
+  for (uint32_t waited = 0;; waited += IPOD_FS_WAIT_UI_MS) {
+    errno = 0;
+    s.lib = ipod_lib_load(CACHE_PATH);
+    is_busy = s.lib == NULL && ipod_fs_is_busy(errno);
+    if (!is_busy || waited >= IPOD_FS_WAIT_WORKER_MS)
+      break;
+  }
+  s.is_cache_locked = is_busy;
+  if (s.is_settings_locked || s.is_cache_locked)
+    ESP_LOGW(TAG, "SD card busy at start: settings/library kept read-only this session");
   const bool has_cache = s.lib != NULL;
   if (!has_cache)
     s.lib = ipod_lib_create();
@@ -2055,7 +2134,7 @@ void ui_ipod_open(void) {
     return;
   }
   ipod_menu_init(&s.menu, s.lib, &s.settings);
-  load_otg();
+  load_otg(IPOD_FS_WAIT_UI_MS);
 
   if (ipod_player_start(s.lib) != ESP_OK)
     ESP_LOGE(TAG, "player failed to start");

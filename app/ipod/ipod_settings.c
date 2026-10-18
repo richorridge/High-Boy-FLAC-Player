@@ -12,6 +12,7 @@
 #include <string.h>
 
 #include "ipod_dsp.h"
+#include "ipod_fs.h"
 
 #define LINE_LEN 96
 
@@ -31,7 +32,7 @@ static int clamp_int(int v, int lo, int hi) {
 }
 
 bool ipod_settings_load(ipod_settings_t *s, const char *path) {
-  FILE *f = fopen(path, "r");
+  FILE *f = ipod_fopen(path, "r", IPOD_FS_WAIT_UI_MS);
   if (f == NULL)
     return false;
   char line[LINE_LEN];
@@ -63,7 +64,7 @@ bool ipod_settings_load(ipod_settings_t *s, const char *path) {
 }
 
 bool ipod_settings_save(const ipod_settings_t *s, const char *path) {
-  FILE *f = fopen(path, "w");
+  FILE *f = ipod_fopen(path, "w", IPOD_FS_WAIT_UI_MS);
   if (f == NULL)
     return false;
   int n = fprintf(f,

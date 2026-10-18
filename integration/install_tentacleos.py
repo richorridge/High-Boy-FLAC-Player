@@ -14,6 +14,7 @@ What it does (idempotent; re-running updates the copied sources):
   4. games_menu_ui.c adds "iPod" to the APPS carousel
   5. Applications/CMakeLists.txt adds the include dirs and silences warnings
                     in the vendored single-header codecs
+  6. with --max-files N, raises the SD card's open-file limit (VFS_MAX_FILES)
 
 Then build and flash as usual: ./tools/build.sh && ./tools/flash.sh
 Put music in /Music on the microSD card (any folder layout).
@@ -21,6 +22,7 @@ Put music in /Music on the microSD card (any folder layout).
 
 import argparse
 import os
+import re
 import shutil
 import sys
 
@@ -51,7 +53,11 @@ def edit(path, anchor, insert, *, before=False, once_marker=None):
 def main():
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("tentacleos")
-    root = os.path.abspath(ap.parse_args().tentacleos)
+    ap.add_argument("--max-files", type=int, default=0, metavar="N",
+                    help="also raise the SD card's open-file limit (VFS_MAX_FILES, 5 by "
+                         "default) to N; each extra slot costs ~0.6 KB of internal RAM")
+    args = ap.parse_args()
+    root = os.path.abspath(args.tentacleos)
     if not os.path.isdir(os.path.join(root, APPS)):
         sys.exit(f"error: {root} does not look like a TentacleOS checkout")
 
@@ -104,6 +110,23 @@ def main():
          "                            PROPERTIES COMPILE_OPTIONS \"-w\")\n",
          once_marker="ipod_codec_impl.c")
     changed.append("Applications/CMakeLists.txt")
+
+    # 6. optional: more simultaneously open SD files
+    if args.max_files:
+        if not 1 <= args.max_files <= 32:
+            sys.exit("error: --max-files must be between 1 and 32")
+        cfg = os.path.join(root, "firmware_p4", "components", "Service", "storage_vfs",
+                           "include", "vfs_config.h")
+        with open(cfg, encoding="utf-8") as f:
+            text = f.read()
+        block = text.find("#ifdef VFS_USE_SD_CARD")
+        m = re.compile(r"(#define VFS_MAX_FILES\s+)\d+").search(text, block)
+        if block < 0 or m is None:
+            sys.exit(f"error: VFS_MAX_FILES not found in {cfg}; edit it by hand")
+        text = text[:m.start()] + m.group(1) + str(args.max_files) + text[m.end():]
+        with open(cfg, "w", encoding="utf-8") as f:
+            f.write(text)
+        changed.append(f"vfs_config.h (VFS_MAX_FILES={args.max_files})")
 
     print("patched: " + ", ".join(changed))
     print("next: ./tools/build.sh && ./tools/flash.sh  (music goes in /Music on the microSD card)")

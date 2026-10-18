@@ -1,0 +1,58 @@
+# TentacleOS lets only 5 card files be open at once (VFS_MAX_FILES). When
+# something else holds them all, songs must wait for a slot, not be skipped
+# as broken or dropped from the library.
+wait_until scanning = 0 10000
+wait 700
+expect library = 16
+select Music
+select Albums
+select Square Waves
+hog 5
+select Hexagon Sun
+wait 1000
+# the decoder is waiting for a slot: still the chosen song, nothing skipped
+expect state = playing
+expect qpos = 1
+expect song = 
+unhog
+wait_until song = Hexagon Sun 3000
+expect qpos = 1
+# the decoder keeps one file open while playing, and lets go at the end
+expect open_files >= 1
+wait_until state = stopped 20000
+wait_until open_files = 0 2000
+# the finished list has already left Now Playing: back to the main menu
+expect title = Square Waves
+press back
+press back
+press back
+expect title = iPod
+select Settings
+# every slot is taken while the library is rescanned
+hog 5
+select Update Library
+wait 1500
+expect scanning = 1
+unhog
+wait_until scanning = 0 20000
+wait 700
+expect library = 16
+expect title = iPod
+# busy for longer than the scanner will wait (3 s per file). A rescan only
+# opens new or changed files, so rewrite a song first: when the scanner gives
+# up on it, it keeps the song's previous entry instead of dropping it.
+cp /sdcard/Music/The Polygons/Square Waves/03 Vertex.flac => /sdcard/vertex.tmp
+cp /sdcard/vertex.tmp => /sdcard/Music/The Polygons/Square Waves/03 Vertex.flac
+select Settings
+hog 5
+select Update Library
+wait 7500
+unhog
+wait_until scanning = 0 20000
+wait 700
+expect library = 16
+select Music
+select Songs
+expect rows = 16
+find Vertex
+quit

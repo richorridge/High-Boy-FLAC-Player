@@ -7,6 +7,7 @@
 
 #include "ipod_art.h"
 
+#include <errno.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -17,6 +18,7 @@
 #include "freertos/task.h"
 #include "sys_prio.h"
 
+#include "ipod_fs.h"
 #include "ipod_text.h"
 #include "stb_image.h"
 
@@ -170,7 +172,7 @@ void ipod_art_image_free(ipod_art_image_t *img) {
 }
 
 static uint8_t *read_range(const char *path, uint32_t offset, uint32_t size, uint32_t *out_len) {
-  FILE *f = fopen(path, "rb");
+  FILE *f = ipod_fopen(path, "rb", IPOD_FS_WAIT_WORKER_MS);
   if (f == NULL)
     return NULL;
   uint8_t *buf = NULL;
@@ -213,6 +215,8 @@ static uint8_t *load_folder_art(const char *flac_path, uint32_t *out_len) {
     uint8_t *buf = read_range(path, 0, 0, out_len);
     if (buf != NULL)
       return buf;
+    if (ipod_fs_is_busy(errno))
+      return NULL; // the card is busy, not missing the file: don't wait per name
   }
   return NULL;
 }

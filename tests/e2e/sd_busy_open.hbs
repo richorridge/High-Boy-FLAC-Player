@@ -1,0 +1,53 @@
+# args: --launcher
+# The app is opened while every SD file slot is held by something else.
+# Settings, play counts and On-The-Go on the card must survive.
+wait 700
+press ok
+wait_until scanning = 0 10000
+wait 700
+select Settings
+select EQ
+select Rock
+expect eq = 17
+press back
+select Music
+select Songs
+find Vertex
+hold ok 1000
+find Solar Wind
+hold ok 1000
+expect otg = 2
+press back
+press back
+press back
+wait 400
+expect screen = apps
+# reopen while the card is busy (the open waits ~3 s per file, then gives up)
+hog 5
+press ok
+wait 300
+unhog
+wait_until scanning = 0 20000
+wait 1500
+expect screen = menu
+# On-The-Go is picked up as soon as the card frees up
+expect otg = 2
+# settings could not be read: defaults this session...
+expect eq = 0
+select Settings
+select EQ
+select Bass Booster
+expect eq = 2
+press back
+press back
+wait 400
+expect screen = apps
+# ...but the card was never overwritten
+wait 400
+press ok
+wait 1500
+expect screen = menu
+expect eq = 17
+expect otg = 2
+expect library = 16
+quit

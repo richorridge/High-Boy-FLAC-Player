@@ -8,10 +8,12 @@
 #include "ipod_meta.h"
 
 #include <ctype.h>
+#include <errno.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
+#include "ipod_fs.h"
 #include "ipod_text.h"
 
 #define FLAC_MAGIC        "fLaC"
@@ -51,12 +53,16 @@ static void apply_comment(ipod_meta_t *meta, char *kv);
 static float parse_gain_db(const char *s);
 
 bool ipod_meta_read_flac(const char *path, ipod_meta_t *out_meta) {
+  return ipod_meta_read(path, out_meta) == IPOD_META_OK;
+}
+
+ipod_meta_status_t ipod_meta_read(const char *path, ipod_meta_t *out_meta) {
   if (path == NULL || out_meta == NULL)
-    return false;
+    return IPOD_META_NOT_FLAC;
   memset(out_meta, 0, sizeof(*out_meta));
-  FILE *f = fopen(path, "rb");
+  FILE *f = ipod_fopen(path, "rb", IPOD_FS_WAIT_WORKER_MS);
   if (f == NULL)
-    return false;
+    return ipod_fs_is_busy(errno) ? IPOD_META_BUSY : IPOD_META_NOT_FLAC;
 
   parse_ctx_t ctx = {.f = f, .meta = out_meta, .pic_type = PIC_TYPE_UNSET};
   bool ok = false;
@@ -114,7 +120,7 @@ bool ipod_meta_read_flac(const char *path, ipod_meta_t *out_meta) {
 
 cleanup:
   fclose(f);
-  return ok;
+  return ok ? IPOD_META_OK : IPOD_META_NOT_FLAC;
 }
 
 uint32_t ipod_meta_duration_ms(const ipod_meta_t *meta) {

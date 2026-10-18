@@ -41,6 +41,7 @@ target_compile_options(ipod_codecs PRIVATE -w)
 # ── App core: everything below the UI, no LVGL ───────────────────────────────
 add_library(ipod_core STATIC
   ${APP_DIR}/ipod_text.c
+  ${APP_DIR}/ipod_fs.c
   ${APP_DIR}/ipod_meta.c
   ${APP_DIR}/ipod_library.c
   ${APP_DIR}/ipod_queue.c
@@ -99,7 +100,8 @@ if(HB_BUILD_SIM)
                    ${TEST_LIB_BIG} --seconds 2 --bulk 400)
   set_tests_properties(make_test_library_big PROPERTIES FIXTURES_SETUP testlib_big)
   set(E2E_DIR ${CMAKE_CURRENT_SOURCE_DIR}/tests/e2e)
-  foreach(suite navigation playback settings otg_search extras_hold lifecycle landscape bigscroll)
+  foreach(suite navigation playback settings otg_search extras_hold lifecycle landscape bigscroll
+                sd_busy sd_busy_open)
     if(suite STREQUAL "bigscroll")
       set(card ${TEST_LIB_BIG})
       set(fixture testlib_big)

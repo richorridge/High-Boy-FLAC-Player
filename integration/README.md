@@ -7,6 +7,11 @@ python3 integration/install_tentacleos.py /path/to/TentacleOS
 cd /path/to/TentacleOS && ./tools/build.sh && ./tools/flash.sh
 ```
 
+Add `--max-files N` to raise the SD card's open-file limit (`VFS_MAX_FILES` in
+`Service/storage_vfs/include/vfs_config.h`, 5 by default). Each extra slot
+costs about 0.6 KB of internal RAM. The app works with the default limit, but
+more slots leave more headroom for other TentacleOS services.
+
 The installer is idempotent: re-run it to update the app sources. It was
 written against TentacleOS commit `48e1052` (Aug 2026). If an anchor moves
 upstream it stops and tells you which file to edit. The manual equivalent is:

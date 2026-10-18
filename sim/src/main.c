@@ -438,6 +438,8 @@ static void field_value(const char *field, char *out, size_t len) {
     snprintf(out, len, "%d", (int)a.streaming);
   else if (strcmp(field, "rate") == 0)
     snprintf(out, len, "%u", (unsigned)a.last_rate);
+  else if (strcmp(field, "open_files") == 0)
+    snprintf(out, len, "%d", hb_fs_open_count());
   else if (strcmp(field, "speaker_volume") == 0)
     snprintf(out, len, "%u", (unsigned)a.volume_pct);
   else
@@ -640,6 +642,28 @@ static bool script_step(uint32_t now) {
         fclose(in);
       if (out != NULL)
         fclose(out);
+      sc->pc++;
+      continue;
+    }
+    if (strcmp(cmd, "hog") == 0 || strcmp(cmd, "unhog") == 0) {
+      // hog N: hold N card files open, like other TentacleOS services might.
+      static FILE *hogs[32];
+      static int nhogs;
+      while (nhogs > 0) {
+        fclose(hogs[--nhogs]);
+      }
+      const int want = strcmp(cmd, "hog") == 0 ? atoi(args) : 0;
+      for (int i = 0; i < want && i < 32; i++) {
+        char p[64];
+        snprintf(p, sizeof(p), "/sdcard/.hog%d", i);
+        FILE *f = fopen(p, "w");
+        if (f == NULL) {
+          fprintf(stderr, "script:%d: hog could only take %d files\n", sc->pc + 1, i);
+          sc->failures++;
+          break;
+        }
+        hogs[nhogs++] = f;
+      }
       sc->pc++;
       continue;
     }

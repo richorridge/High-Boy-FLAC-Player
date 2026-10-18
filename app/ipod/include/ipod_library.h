@@ -105,6 +105,7 @@ typedef struct {
   atomic_bool cancel;      ///< set by the caller to abort a scan
   atomic_uint files_found; ///< audio files discovered so far
   atomic_uint files_parsed;
+  atomic_uint files_busy; ///< could not be opened (card busy): previous entry kept
 } ipod_scan_progress_t;
 
 typedef struct ipod_library ipod_library_t;
@@ -187,6 +188,17 @@ size_t ipod_lib_playlist_tracks(const ipod_library_t *lib, size_t index, uint32_
 
 /** @brief Read an m3u file and resolve its entries to library tracks. */
 size_t ipod_lib_read_m3u(const ipod_library_t *lib, const char *m3u_path, uint32_t **out);
+
+/**
+ * @brief ipod_lib_read_m3u() with an explicit wait for a free SD file slot.
+ * @param out_is_busy  set when the file could not be opened because every
+ *                     file slot was taken (the list is then not "empty")
+ */
+size_t ipod_lib_read_m3u_wait(const ipod_library_t *lib,
+                              const char *m3u_path,
+                              uint32_t wait_ms,
+                              bool *out_is_busy,
+                              uint32_t **out);
 /** @brief Write tracks as an m3u file of absolute paths. */
 bool ipod_lib_write_m3u(const ipod_library_t *lib,
                         const char *m3u_path,

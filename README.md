@@ -107,7 +107,8 @@ python3 tools/make_test_library.py sdcard          # demo card: 16 original trac
 You can also click and hold the on-screen buttons with the mouse. Environment
 options: `HB_AUDIO=sdl|null|fast`, `HB_AUDIO_CAPTURE=out.wav` (records exactly
 what the speaker receives), `HB_BATTERY=0..100`, `HB_CHARGING=1`,
-`HB_TIME=<epoch>`, `HB_LOG=error|warn|info|debug`.
+`HB_TIME=<epoch>`, `HB_MAX_FILES=N` (open-file limit, default 5 like the
+device), `HB_LOG=error|warn|info|debug`.
 
 The demo library is synthesised by `tools/make_test_library.py` (original
 melodies, fictional artists, generated cover art). It deliberately includes
@@ -118,7 +119,7 @@ playlist. Add `--bulk 400` for a long list.
 ## Tests
 
 ```bash
-cd build && ctest            # 13 suites
+cd build && ctest            # 15 suites
 ```
 
 * **Unit tests** (`tests/unit/test_core.c`, 554 checks): UTF-8 folding and
@@ -131,11 +132,13 @@ cd build && ctest            # 13 suites
   `flac -d` downmixed with no gaps between songs. Also covered: hi-res
   decimation, pause, seek, previous/next, fast-forward, repeat, shuffle, play
   counts, skipping broken files and cover art.
-* **End-to-end UI tests** (`tests/e2e/*.hbs`, 8 suites): scripted button
+* **End-to-end UI tests** (`tests/e2e/*.hbs`, 10 suites): scripted button
   presses against the simulator, with assertions on what is on screen and
   playing. They cover navigation, playback controls, settings persistence,
   On-The-Go and Search, Extras and Hold, leaving and re-entering the app,
   picking up new files, landscape, and fast scrolling through 416 songs.
+  Two more suites take every SD file slot away (during playback, during a
+  rescan, and while the app opens) and check that nothing is skipped or lost.
 * All of the above also pass under **AddressSanitizer + UndefinedBehaviorSanitizer**
   (`-DHB_SANITIZE=ON`) and **ThreadSanitizer**.
 * **ESP32-P4 build check** (`integration/esp32p4_check/run_check.sh`):
@@ -145,7 +148,7 @@ cd build && ctest            # 13 suites
 Script commands for the simulator are `press`/`hold BTN [ms]`, `down`/`up BTN`,
 `wait ms`, `find TEXT`, `select TEXT`, `expect FIELD OP VALUE`,
 `wait_until FIELD OP VALUE TIMEOUT`, `shot FILE.png`, `cp SRC => DST`,
-`repeat N CMD` and `quit`. See `sim/src/main.c` for the fields.
+`hog N` / `unhog` (hold card files open), `repeat N CMD` and `quit`. See `sim/src/main.c` for the fields.
 
 ## Layout
 
@@ -159,6 +162,7 @@ app/ipod/                 the app (copied into TentacleOS as ui/screens/ipod/)
   ipod_meta.c             FLAC metadata (STREAMINFO, Vorbis comments, PICTURE)
   ipod_queue.c            Now Playing list, shuffle, repeat
   ipod_art.c              cover-art worker (stb_image -> RGB565 + reflection)
+  ipod_fs.c               fopen that waits out a full SD file table
   ipod_settings.c, ipod_text.c, port/ipod_port_tentacleos.c
   third_party/            dr_flac 0.13.4, stb_image 2.30 (public domain)
 sim/                      High Boy simulator (SDL2 + LVGL 9.4) and API shims
@@ -183,8 +187,20 @@ integration/              TentacleOS installer and ESP32-P4 build check
   is shown instead.
 * **Clock** shows UTC, which is what TentacleOS keeps. It reads "Time not set"
   until the time has been synced.
-* TentacleOS opens at most 5 SD files at once (`VFS_MAX_FILES`). The app uses
-  at most 4 at the same moment.
+* **SD card file limit.** TentacleOS mounts the card with 5 file slots shared by
+  the whole firmware (`VFS_MAX_FILES`). The app uses at most 4 at once, and it
+  copes when the slots are all taken:
+  * every open waits for a free slot: up to 3 s in background tasks, 300 ms on
+    the UI thread;
+  * a song is never skipped or dropped from the library just because the card
+    was busy;
+  * On-The-Go loads as soon as the card frees up;
+  * settings and the library cache that could not be read are never
+    overwritten.
+
+  To raise the limit, run
+  `install_tentacleos.py --max-files 10` (about 0.6 KB of RAM per extra slot).
+  The simulator enforces the same limit (`HB_MAX_FILES`, default 5).
 * `dr_flac` is patched (marked "High Boy FLAC iPod patch") so it can seek in FLAC
   files that start with an ID3v2 tag. Without the patch, such files failed to
   open.

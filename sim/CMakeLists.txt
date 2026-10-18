@@ -36,5 +36,5 @@ set_source_files_properties(${APP_DIR}/ui_ipod.c PROPERTIES COMPILE_OPTIONS
 target_link_libraries(hb_sim PRIVATE ipod_engine hb_audio_sdl lvgl SDL2::SDL2 m pthread)
 # /sdcard -> host folder, the same technique as TentacleOS's HLE simulator.
 target_link_options(hb_sim PRIVATE
-  -Wl,--wrap=fopen -Wl,--wrap=stat -Wl,--wrap=opendir -Wl,--wrap=mkdir
+  -Wl,--wrap=fopen -Wl,--wrap=fclose -Wl,--wrap=stat -Wl,--wrap=opendir -Wl,--wrap=mkdir
   -Wl,--wrap=remove -Wl,--wrap=rename -Wl,--wrap=access -Wl,--wrap=rmdir)

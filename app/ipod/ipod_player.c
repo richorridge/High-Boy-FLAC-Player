@@ -20,6 +20,7 @@
 #include "audio_i2s.h"
 #include "dr_flac.h"
 #include "ipod_dsp.h"
+#include "ipod_fs.h"
 
 #define PLAYER_TASK_STACK 16384
 #define PLAYER_TASK_PRIO  SYS_PRIO_SERVICE_HI
@@ -404,6 +405,7 @@ bool ipod_player_take_stats_dirty(void) {
 
 typedef struct {
   drflac *fl;
+  FILE *file; ///< opened by us (ipod_fopen), read through dr_flac callbacks
   ipod_dsp_t dsp;
   uint64_t frame_pos;
   uint32_t track;
@@ -449,6 +451,46 @@ static void decoder_close(decoder_t *d) {
     drflac_close(d->fl);
     d->fl = NULL;
   }
+  if (d->file != NULL) {
+    fclose(d->file);
+    d->file = NULL;
+  }
+}
+
+static size_t flac_read_cb(void *user, void *out, size_t bytes) {
+  return fread(out, 1, bytes, (FILE *)user);
+}
+
+static drflac_bool32 flac_seek_cb(void *user, int offset, drflac_seek_origin origin) {
+  int whence = SEEK_SET;
+  if (origin == DRFLAC_SEEK_CUR)
+    whence = SEEK_CUR;
+  else if (origin == DRFLAC_SEEK_END)
+    whence = SEEK_END;
+  return fseek((FILE *)user, offset, whence) == 0;
+}
+
+static drflac_bool32 flac_tell_cb(void *user, drflac_int64 *out_cursor) {
+  long pos = ftell((FILE *)user);
+  if (pos < 0)
+    return DRFLAC_FALSE;
+  *out_cursor = pos;
+  return DRFLAC_TRUE;
+}
+
+// Open through ipod_fopen() so a moment with no free SD file slot is waited
+// out instead of being mistaken for a broken file and skipped.
+static bool decoder_open_file(decoder_t *d, const char *path) {
+  d->file = ipod_fopen(path, "rb", IPOD_FS_WAIT_WORKER_MS);
+  if (d->file == NULL)
+    return false;
+  d->fl = drflac_open(flac_read_cb, flac_seek_cb, flac_tell_cb, d->file, NULL);
+  if (d->fl == NULL) {
+    fclose(d->file);
+    d->file = NULL;
+    return false;
+  }
+  return true;
 }
 
 static float track_gain_db(uint32_t track, bool sound_check) {
@@ -492,8 +534,7 @@ static void decoder_open_current(decoder_t *d) {
   if (!have)
     return;
 
-  d->fl = drflac_open_file(path, NULL);
-  if (d->fl != NULL &&
+  if (decoder_open_file(d, path) &&
       (d->fl->channels == 0 || d->fl->channels > MAX_CHANNELS || d->fl->sampleRate == 0)) {
     decoder_close(d);
   }
