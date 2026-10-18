@@ -65,11 +65,8 @@ void ipod_dsp_click(ipod_dsp_t *dsp);
  * @param out     room for frames / decim samples
  * @return number of mono samples written
  */
-size_t ipod_dsp_process(ipod_dsp_t *dsp,
-                        const int16_t *in,
-                        size_t frames,
-                        unsigned channels,
-                        int16_t *out);
+size_t ipod_dsp_process(
+    ipod_dsp_t *dsp, const int16_t *in, size_t frames, unsigned channels, int16_t *out);
 
 #ifdef __cplusplus
 }

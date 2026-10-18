@@ -22,24 +22,24 @@ static int g_checks;
 static int g_failures;
 static char g_root[4096];
 
-#define CHECK(cond)                                                                                \
-  do {                                                                                             \
-    g_checks++;                                                                                    \
-    if (!(cond)) {                                                                                 \
-      g_failures++;                                                                                \
-      fprintf(stderr, "%s:%d: CHECK failed: %s\n", __FILE__, __LINE__, #cond);                     \
-    }                                                                                              \
+#define CHECK(cond)                                                            \
+  do {                                                                         \
+    g_checks++;                                                                \
+    if (!(cond)) {                                                             \
+      g_failures++;                                                            \
+      fprintf(stderr, "%s:%d: CHECK failed: %s\n", __FILE__, __LINE__, #cond); \
+    }                                                                          \
   } while (0)
 
-#define CHECK_STR(a, b)                                                                            \
-  do {                                                                                             \
-    g_checks++;                                                                                    \
-    const char *_a = (a);                                                                          \
-    const char *_b = (b);                                                                          \
-    if (strcmp(_a, _b) != 0) {                                                                     \
-      g_failures++;                                                                                \
-      fprintf(stderr, "%s:%d: \"%s\" != \"%s\"\n", __FILE__, __LINE__, _a, _b);                    \
-    }                                                                                              \
+#define CHECK_STR(a, b)                                                         \
+  do {                                                                          \
+    g_checks++;                                                                 \
+    const char *_a = (a);                                                       \
+    const char *_b = (b);                                                       \
+    if (strcmp(_a, _b) != 0) {                                                  \
+      g_failures++;                                                             \
+      fprintf(stderr, "%s:%d: \"%s\" != \"%s\"\n", __FILE__, __LINE__, _a, _b); \
+    }                                                                           \
   } while (0)
 
 static const char *lib_path(const char *rel) {
@@ -109,7 +109,8 @@ static void test_text(void) {
 
 static void test_meta(void) {
   ipod_meta_t m;
-  CHECK(ipod_meta_read_flac(lib_path("Music/Aurora Vale/Northern Lights/1-01 Polar Night.flac"), &m));
+  CHECK(
+      ipod_meta_read_flac(lib_path("Music/Aurora Vale/Northern Lights/1-01 Polar Night.flac"), &m));
   CHECK_STR(m.title, "Polar Night");
   CHECK_STR(m.artist, "Aurora Vale");
   CHECK_STR(m.album, "Northern Lights");
@@ -134,7 +135,8 @@ static void test_meta(void) {
   }
   CHECK(magic[0] == 0xFF && magic[1] == 0xD8);
 
-  CHECK(ipod_meta_read_flac(lib_path("Music/The Polygons/Square Waves/01 Triangle Theory.flac"), &m));
+  CHECK(
+      ipod_meta_read_flac(lib_path("Music/The Polygons/Square Waves/01 Triangle Theory.flac"), &m));
   CHECK_STR(m.composer, "Ada Vector");
   CHECK_STR(m.picture_mime, "image/png");
   CHECK(!m.has_rg_track);
@@ -146,7 +148,8 @@ static void test_meta(void) {
   }
   CHECK(memcmp(magic, "\x89PNG", 4) == 0);
 
-  CHECK(ipod_meta_read_flac(lib_path("Music/Compilations/Summer Mix 2005/03 Hi-Res Horizon.flac"), &m));
+  CHECK(ipod_meta_read_flac(lib_path("Music/Compilations/Summer Mix 2005/03 Hi-Res Horizon.flac"),
+                            &m));
   CHECK(m.sample_rate == 96000 && m.bits_per_sample == 24);
   CHECK(m.is_compilation);
   CHECK(ipod_meta_read_flac(lib_path("Music/Compilations/Summer Mix 2005/02 Mono Lake.flac"), &m));
@@ -193,12 +196,19 @@ static void check_library_contents(const ipod_library_t *lib) {
   CHECK(ipod_lib_playlist_count(lib) == 1);
   CHECK_STR(ipod_lib_playlist_name(lib, 0), "Road Trip");
 
-  static const char *const ARTISTS[] = {
-      "Aurora Vale", "The Polygons", "Tag Tester", "Unknown Artist", "Various Artists",
-      "Zoe Bronte"};
+  static const char *const ARTISTS[] = {"Aurora Vale",
+                                        "The Polygons",
+                                        "Tag Tester",
+                                        "Unknown Artist",
+                                        "Various Artists",
+                                        "Zoe Bronte"};
   check_groups(lib, IPOD_FIELD_ARTIST, NULL, ARTISTS, 6);
-  static const char *const ALBUMS[] = {"Cafe Nocturne",   "Edge Cases",   "Electrique",
-                                       "Northern Lights", "Square Waves", "Summer Mix 2005",
+  static const char *const ALBUMS[] = {"Cafe Nocturne",
+                                       "Edge Cases",
+                                       "Electrique",
+                                       "Northern Lights",
+                                       "Square Waves",
+                                       "Summer Mix 2005",
                                        "Unknown Album"};
   check_groups(lib, IPOD_FIELD_ALBUM, NULL, ALBUMS, 7);
   static const char *const GENRES[] = {"Ambient", "Electronic", "Jazz", "Pop", "Test"};
@@ -602,8 +612,8 @@ static void test_dsp(void) {
   CHECK(eq_ratio(3, 50.0) / eq_ratio(3, 5000.0) < 0.6);     // Bass Reducer
   CHECK(eq_ratio(20, 10000.0) / eq_ratio(20, 100.0) > 1.6); // Treble Booster
   CHECK(eq_ratio(21, 10000.0) / eq_ratio(21, 100.0) < 0.6); // Treble Reducer
-  CHECK(eq_ratio(2, 5000.0) < 1.0); // boosting presets leave headroom
-  double flat = eq_ratio(8, 1000.0); // Flat
+  CHECK(eq_ratio(2, 5000.0) < 1.0);                         // boosting presets leave headroom
+  double flat = eq_ratio(8, 1000.0);                        // Flat
   CHECK(flat > 0.999 && flat < 1.001);
 
   ipod_dsp_configure(&d, 44100, IPOD_EQ_OFF, 0.0f);
@@ -703,7 +713,8 @@ static void check_decode_exact(const char *rel) {
       r = (int16_t)(ref[2 * i] | (ref[2 * i + 1] << 8));
     } else {
       r = (int32_t)((uint32_t)ref[3 * i] << 8 | (uint32_t)ref[3 * i + 1] << 16 |
-                    (uint32_t)ref[3 * i + 2] << 24) >> 8;
+                    (uint32_t)ref[3 * i + 2] << 24) >>
+          8;
     }
     if ((pcm[i] >> (32 - bps)) != r)
       mismatches++;

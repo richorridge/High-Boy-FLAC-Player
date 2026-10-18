@@ -16,13 +16,13 @@
 #include "ipod_dsp.h"
 #include "ipod_text.h"
 
-#define IPOD_APP_VERSION   "1.0.0"
-#define OTG_INITIAL        32
-#define ROWS_INITIAL       16
-#define COMPILATIONS_FLAG  1u
-#define MS_PER_MIN         60000u
-#define MIN_PER_HOUR       60u
-#define BYTES_PER_MB       (1024u * 1024u)
+#define IPOD_APP_VERSION  "1.0.0"
+#define OTG_INITIAL       32
+#define ROWS_INITIAL      16
+#define COMPILATIONS_FLAG 1u
+#define MS_PER_MIN        60000u
+#define MIN_PER_HOUR      60u
+#define BYTES_PER_MB      (1024u * 1024u)
 
 static const char *TAG = "IPOD_MENU";
 
@@ -128,12 +128,8 @@ static bool push_filtered(ipod_menu_t *m,
 }
 
 // Takes ownership of @p tracks.
-static bool push_songs(ipod_menu_t *m,
-                       const char *title,
-                       uint32_t *tracks,
-                       size_t n,
-                       bool has_letters,
-                       bool is_otg) {
+static bool push_songs(
+    ipod_menu_t *m, const char *title, uint32_t *tracks, size_t n, bool has_letters, bool is_otg) {
   ipod_view_t *v = push_raw(m, IPOD_VIEW_SONGS, title);
   if (v == NULL) {
     free(tracks);
@@ -418,7 +414,8 @@ static const char *view_name(ipod_view_kind_t kind, uint32_t flags) {
 }
 
 // Filter for drilling into a group row.
-static ipod_filter_t group_filter(const ipod_menu_t *m, const ipod_view_t *v, const ipod_row_t *row) {
+static ipod_filter_t
+group_filter(const ipod_menu_t *m, const ipod_view_t *v, const ipod_row_t *row) {
   ipod_filter_t f = v->filter;
   const ipod_track_t *t = ipod_lib_track(m->lib, row->value);
   if (t == NULL)
@@ -762,10 +759,10 @@ void ipod_menu_row_text(const ipod_menu_t *m,
       out->icon = IPOD_ICON_ARROW;
       break;
     case IPOD_ROW_GROUP:
-      ipod_text_copy(out->text,
-                     sizeof(out->text),
-                     ipod_lib_disp(m->lib,
-                                   ipod_lib_field_value(m->lib, (ipod_field_t)r->sub, r->value)));
+      ipod_text_copy(
+          out->text,
+          sizeof(out->text),
+          ipod_lib_disp(m->lib, ipod_lib_field_value(m->lib, (ipod_field_t)r->sub, r->value)));
       out->icon = IPOD_ICON_ARROW;
       break;
     case IPOD_ROW_ALL:
@@ -775,7 +772,8 @@ void ipod_menu_row_text(const ipod_menu_t *m,
     case IPOD_ROW_TRACK: {
       const uint32_t track = r->value < v->ntracks ? v->tracks[r->value] : IPOD_NO_TRACK;
       const ipod_track_t *t = ipod_lib_track(m->lib, track);
-      ipod_text_copy(out->text, sizeof(out->text), t != NULL ? ipod_lib_disp(m->lib, t->title) : "");
+      ipod_text_copy(
+          out->text, sizeof(out->text), t != NULL ? ipod_lib_disp(m->lib, t->title) : "");
       if (track == playing_track)
         out->icon = IPOD_ICON_SPEAKER;
       break;

@@ -27,13 +27,13 @@ static int g_failures;
 static char g_root[4096];
 static char g_capture[4200];
 
-#define CHECK(cond)                                                                                \
-  do {                                                                                             \
-    g_checks++;                                                                                    \
-    if (!(cond)) {                                                                                 \
-      g_failures++;                                                                                \
-      fprintf(stderr, "%s:%d: CHECK failed: %s\n", __FILE__, __LINE__, #cond);                     \
-    }                                                                                              \
+#define CHECK(cond)                                                            \
+  do {                                                                         \
+    g_checks++;                                                                \
+    if (!(cond)) {                                                             \
+      g_failures++;                                                            \
+      fprintf(stderr, "%s:%d: CHECK failed: %s\n", __FILE__, __LINE__, #cond); \
+    }                                                                          \
   } while (0)
 
 static const char *lib_path(const char *rel) {
@@ -120,7 +120,8 @@ static int16_t *reference_mono(const char *path, size_t *out_n) {
           s = (int16_t)(frame[2 * c] | (frame[2 * c + 1] << 8));
         } else {
           int32_t s24 = (int32_t)((uint32_t)frame[3 * c] << 8 | (uint32_t)frame[3 * c + 1] << 16 |
-                                  (uint32_t)frame[3 * c + 2] << 24) >> 8;
+                                  (uint32_t)frame[3 * c + 2] << 24) >>
+                        8;
           s = s24 >> 8; // dr_flac's s16 conversion keeps the top 16 bits
         }
         acc += s;
@@ -176,7 +177,8 @@ static void check_capture_matches(size_t from, const char *const *rels, size_t n
   CHECK(pos == cap_n); // nothing extra: no gaps, no padding between songs
   CHECK(mismatches == 0);
   if (mismatches != 0 || pos != cap_n)
-    fprintf(stderr, "  capture %zu samples, expected %zu, %zu mismatches\n", cap_n, pos, mismatches);
+    fprintf(
+        stderr, "  capture %zu samples, expected %zu, %zu mismatches\n", cap_n, pos, mismatches);
   free(cap);
 }
 
@@ -203,7 +205,11 @@ static void test_fast(ipod_library_t *lib) {
   CHECK(a1.stream_starts - a0.stream_starts == 1); // one stream for the whole album: gapless
 
   for (int i = 0; i < 4; i++) {
-    int idx = find_title(lib, i == 0 ? "Triangle Theory" : i == 1 ? "Hexagon Sun" : i == 2 ? "Vertex" : "Acute Angles");
+    int idx = find_title(lib,
+                         i == 0   ? "Triangle Theory"
+                         : i == 1 ? "Hexagon Sun"
+                         : i == 2 ? "Vertex"
+                                  : "Acute Angles");
     CHECK(idx >= 0 && ipod_lib_track(lib, (uint32_t)idx)->play_count == 1);
   }
   CHECK(ipod_player_take_stats_dirty());
@@ -410,8 +416,9 @@ static void test_art(void) {
   int t = find_title(lib, "Triangle Theory");
   int polar = find_title(lib, "Polar Night");
   int etude = find_title(lib, "Espresso \xC3\x89tude");
-  int cava = find_title(lib, "\xC3\x87"
-                             "a Va");
+  int cava = find_title(lib,
+                        "\xC3\x87"
+                        "a Va");
   CHECK(t >= 0 && polar >= 0 && etude >= 0 && cava >= 0);
   if (t < 0 || polar < 0 || etude < 0 || cava < 0) {
     ipod_lib_destroy(lib);
@@ -427,8 +434,13 @@ static void test_art(void) {
   CHECK(img.pixels == NULL);
 
   const ipod_track_t *pt = ipod_lib_track(lib, (uint32_t)polar);
-  CHECK(ipod_art_decode(ipod_lib_str(lib, pt->path), pt->picture_offset, pt->picture_size, 140, 0,
-                        0xFFFF, &img)); // progressive JPEG
+  CHECK(ipod_art_decode(ipod_lib_str(lib, pt->path),
+                        pt->picture_offset,
+                        pt->picture_size,
+                        140,
+                        0,
+                        0xFFFF,
+                        &img)); // progressive JPEG
   CHECK(img.w == 140 && img.h == 140 && img.reflection == NULL);
   ipod_art_image_free(&img);
 
@@ -446,8 +458,8 @@ static void test_art(void) {
 
   CHECK(ipod_art_start() == ESP_OK);
   uint32_t first = ipod_art_request(tri, tt->picture_offset, tt->picture_size, 100, 20, 0xFFFF);
-  uint32_t id = ipod_art_request(ipod_lib_str(lib, pt->path), pt->picture_offset, pt->picture_size,
-                                 100, 20, 0xFFFF);
+  uint32_t id = ipod_art_request(
+      ipod_lib_str(lib, pt->path), pt->picture_offset, pt->picture_size, 100, 20, 0xFFFF);
   CHECK(first != 0 && id != first);
   bool got = false;
   for (int i = 0; i < 300 && !got; i++) {

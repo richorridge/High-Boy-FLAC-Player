@@ -31,8 +31,8 @@ typedef struct {
   bool is_now_playing; ///< the Now Playing screen is showing
   bool is_hold;        ///< Hold switch engaged
   bool is_scanning;
-  char title[64];      ///< header title of the current screen
-  char selected[128];  ///< label of the highlighted row
+  char title[64];     ///< header title of the current screen
+  char selected[128]; ///< label of the highlighted row
   int selected_index;
   int row_count;
   char wheel_mode[16]; ///< Now Playing wheel mode: volume, scrub, rating, shuffle

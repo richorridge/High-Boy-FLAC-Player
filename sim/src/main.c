@@ -206,7 +206,8 @@ static void layout_hits(void) {
   s_hits[INPUT_BTN_DOWN] = (hit_t){{cx - d / 2, cy + d / 2, d, d}, INPUT_BTN_DOWN};
   s_hits[INPUT_BTN_LEFT] = (hit_t){{cx - d - d / 2, cy - d / 2, d, d}, INPUT_BTN_LEFT};
   s_hits[INPUT_BTN_RIGHT] = (hit_t){{cx + d / 2, cy - d / 2, d, d}, INPUT_BTN_RIGHT};
-  s_hits[INPUT_BTN_OK] = (hit_t){{BEZEL + screen_w - 2 * d - 30, cy - d / 2 + 18, d, d}, INPUT_BTN_OK};
+  s_hits[INPUT_BTN_OK] =
+      (hit_t){{BEZEL + screen_w - 2 * d - 30, cy - d / 2 + 18, d, d}, INPUT_BTN_OK};
   s_hits[INPUT_BTN_BACK] = (hit_t){{BEZEL + screen_w - d - 10, cy - d - 6, d, d}, INPUT_BTN_BACK};
 }
 
@@ -226,7 +227,8 @@ static void render_window(void) {
     if (b == INPUT_BTN_OK || b == INPUT_BTN_BACK)
       SDL_SetRenderDrawColor(s_ren, down ? 0xFF : 0xB8, down ? 0xFF : 0x9A, 0xFF, 0xFF);
     else
-      SDL_SetRenderDrawColor(s_ren, down ? 0xE0 : 0x6A, down ? 0xE0 : 0x62, down ? 0xF0 : 0x7A, 0xFF);
+      SDL_SetRenderDrawColor(
+          s_ren, down ? 0xE0 : 0x6A, down ? 0xE0 : 0x62, down ? 0xF0 : 0x7A, 0xFF);
     SDL_RenderFillRect(s_ren, &s_hits[b].r);
   }
   SDL_RenderPresent(s_ren);
@@ -335,7 +337,7 @@ typedef struct {
   input_button_t find_release; ///< pending release, INPUT_BTN_COUNT if none
 } script_t;
 
-#define FIND_STEP_MS  40
+#define FIND_STEP_MS   40
 #define FIND_MAX_STEPS 2000
 
 static script_t *s_script;
@@ -396,7 +398,8 @@ static void field_value(const char *field, char *out, size_t len) {
   else if (strcmp(field, "song") == 0)
     snprintf(out, len, "%s", d.now_title);
   else if (strcmp(field, "state") == 0)
-    snprintf(out, len, "%s", d.player_state >= 0 && d.player_state < 3 ? STATES[d.player_state] : "?");
+    snprintf(
+        out, len, "%s", d.player_state >= 0 && d.player_state < 3 ? STATES[d.player_state] : "?");
   else if (strcmp(field, "screen") == 0)
     snprintf(out, len, "%s", !d.is_open ? "apps" : d.is_now_playing ? "nowplaying" : "menu");
   else if (strcmp(field, "mode") == 0)
@@ -491,7 +494,12 @@ static bool script_step(uint32_t now) {
       sc->is_polling = false;
       sc->pc++;
     } else if ((int32_t)(now - sc->poll_deadline) >= 0) {
-      fprintf(stderr, "script:%d: TIMEOUT %s %s '%s' (actual '%s')\n", sc->pc + 1, field, op, value,
+      fprintf(stderr,
+              "script:%d: TIMEOUT %s %s '%s' (actual '%s')\n",
+              sc->pc + 1,
+              field,
+              op,
+              value,
               actual);
       sc->failures++;
       sc->is_polling = false;
@@ -660,8 +668,13 @@ static bool script_step(uint32_t now) {
         char actual[256];
         field_value(field, actual, sizeof(actual));
         if (!compare(actual, op, value)) {
-          fprintf(stderr, "script:%d: FAIL %s %s '%s' (actual '%s')\n", sc->pc + 1, field, op,
-                  value, actual);
+          fprintf(stderr,
+                  "script:%d: FAIL %s %s '%s' (actual '%s')\n",
+                  sc->pc + 1,
+                  field,
+                  op,
+                  value,
+                  actual);
           sc->failures++;
         }
       }
@@ -687,15 +700,16 @@ static bool script_step(uint32_t now) {
 // ---------------------------------------------------------------------------
 
 static void usage(const char *argv0) {
-  fprintf(stderr,
-          "usage: %s [--sd DIR] [--scale N] [--landscape] [--launcher] [--headless] [--script FILE]\n"
-          "  --sd DIR      host folder used as the microSD card (default ./sdcard)\n"
-          "  --landscape   rotate the display to 320x240\n"
-          "  --launcher    start in the TentacleOS Apps menu instead of the iPod app\n"
-          "  --headless    no window (for CI); combine with --script\n"
-          "  --script FILE run an automated UI script and exit with its failure count\n"
-          "env: HB_AUDIO=sdl|null|fast  HB_AUDIO_CAPTURE=out.wav  HB_LOG=error|warn|info|debug\n",
-          argv0);
+  fprintf(
+      stderr,
+      "usage: %s [--sd DIR] [--scale N] [--landscape] [--launcher] [--headless] [--script FILE]\n"
+      "  --sd DIR      host folder used as the microSD card (default ./sdcard)\n"
+      "  --landscape   rotate the display to 320x240\n"
+      "  --launcher    start in the TentacleOS Apps menu instead of the iPod app\n"
+      "  --headless    no window (for CI); combine with --script\n"
+      "  --script FILE run an automated UI script and exit with its failure count\n"
+      "env: HB_AUDIO=sdl|null|fast  HB_AUDIO_CAPTURE=out.wav  HB_LOG=error|warn|info|debug\n",
+      argv0);
 }
 
 int main(int argc, char **argv) {
@@ -742,9 +756,10 @@ int main(int argc, char **argv) {
                                win_h,
                                0);
       s_ren = s_win != NULL ? SDL_CreateRenderer(s_win, -1, 0) : NULL;
-      s_tex = s_ren != NULL ? SDL_CreateTexture(s_ren, SDL_PIXELFORMAT_RGB565,
-                                                SDL_TEXTUREACCESS_STREAMING, LCD_W, LCD_H)
-                            : NULL;
+      s_tex = s_ren != NULL
+                  ? SDL_CreateTexture(
+                        s_ren, SDL_PIXELFORMAT_RGB565, SDL_TEXTUREACCESS_STREAMING, LCD_W, LCD_H)
+                  : NULL;
       if (s_tex == NULL) {
         fprintf(stderr, "SDL window failed (%s); running headless\n", SDL_GetError());
         s_headless = true;

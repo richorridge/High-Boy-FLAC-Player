@@ -41,6 +41,7 @@ repeat 7 press left
 press ok
 expect selected = key:N query:SUN
 expect rows = 1
+wait 300
 shot $SHOTS/search.png
 press down
 expect selected = Hexagon Sun

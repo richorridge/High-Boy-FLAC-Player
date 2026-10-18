@@ -131,11 +131,8 @@ void ipod_dsp_click(ipod_dsp_t *dsp) {
   dsp->click_pos = dsp->click_len;
 }
 
-size_t ipod_dsp_process(ipod_dsp_t *dsp,
-                        const int16_t *in,
-                        size_t frames,
-                        unsigned channels,
-                        int16_t *out) {
+size_t ipod_dsp_process(
+    ipod_dsp_t *dsp, const int16_t *in, size_t frames, unsigned channels, int16_t *out) {
   if (channels == 0 || dsp->decim == 0)
     return 0;
   const size_t n_out = frames / dsp->decim;

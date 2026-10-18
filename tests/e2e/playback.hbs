@@ -14,6 +14,7 @@ expect state = playing
 expect qpos = 1
 expect qcount = 4
 wait_until art = 1 3000
+wait 300
 shot $SHOTS/nowplaying.png
 # RIGHT = next song, LEFT early in a song = previous song
 press right
@@ -44,6 +45,7 @@ press ok
 expect mode = rating
 repeat 3 press up
 expect rating = 3
+wait 300
 shot $SHOTS/rating.png
 press ok
 expect mode = shuffle

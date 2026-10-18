@@ -19,38 +19,50 @@
 #include "ipod_meta.h"
 #include "ipod_text.h"
 
-#define POOL_INITIAL       (16u * 1024u)
-#define STRS_INITIAL       256u
-#define TRACKS_INITIAL     128u
-#define BUCKETS_INITIAL    256u
-#define PLAYLISTS_INITIAL  8u
-#define TEXT_BUF_LEN       256
-#define PATH_BUF_LEN       512
-#define LINE_BUF_LEN       1024
-#define SCAN_MAX_DEPTH     12
-#define FNV_OFFSET         2166136261u
-#define FNV_PRIME          16777619u
-#define CACHE_MAGIC        0x42445049u // "IPDB" little-endian
-#define CACHE_TRAILER      0x21444E45u // "END!"
-#define CACHE_VERSION      1u
-#define CACHE_MAX_TRACKS   200000u
-#define CACHE_MAX_STR      1023u
-#define RECENT_ADDED_MAX   50u
-#define TOP_PLAYED_MAX     25u
-#define RECENT_PLAYED_MAX  25u
-#define TOP_RATED_MIN      4u
-#define CDB_PER_DB         100.0f
-#define EXT_FLAC           ".flac"
-#define EXT_M3U            ".m3u"
-#define EXT_M3U8           ".m3u8"
-#define UTF8_BOM           "\xEF\xBB\xBF"
+#define POOL_INITIAL      (16u * 1024u)
+#define STRS_INITIAL      256u
+#define TRACKS_INITIAL    128u
+#define BUCKETS_INITIAL   256u
+#define PLAYLISTS_INITIAL 8u
+#define TEXT_BUF_LEN      256
+#define PATH_BUF_LEN      512
+#define LINE_BUF_LEN      1024
+#define SCAN_MAX_DEPTH    12
+#define FNV_OFFSET        2166136261u
+#define FNV_PRIME         16777619u
+#define CACHE_MAGIC       0x42445049u // "IPDB" little-endian
+#define CACHE_TRAILER     0x21444E45u // "END!"
+#define CACHE_VERSION     1u
+#define CACHE_MAX_TRACKS  200000u
+#define CACHE_MAX_STR     1023u
+#define RECENT_ADDED_MAX  50u
+#define TOP_PLAYED_MAX    25u
+#define RECENT_PLAYED_MAX 25u
+#define TOP_RATED_MIN     4u
+#define CDB_PER_DB        100.0f
+#define EXT_FLAC          ".flac"
+#define EXT_M3U           ".m3u"
+#define EXT_M3U8          ".m3u8"
+#define UTF8_BOM          "\xEF\xBB\xBF"
 
 static const char *TAG = "IPOD_LIB";
 
 // Folders TentacleOS keeps on the card root; never scanned for music.
 static const char *const SKIP_DIRS[] = {
-    "assets", "config", "nfc", "rfid", "subghz", "ir", "wifi", "ble", "lora", "badusb",
-    "ota", "System Volume Information", "LOST.DIR", "$RECYCLE.BIN",
+    "assets",
+    "config",
+    "nfc",
+    "rfid",
+    "subghz",
+    "ir",
+    "wifi",
+    "ble",
+    "lora",
+    "badusb",
+    "ota",
+    "System Volume Information",
+    "LOST.DIR",
+    "$RECYCLE.BIN",
 };
 
 typedef struct {
@@ -319,8 +331,7 @@ static void scan_dir(scan_ctx_t *ctx, char *path, size_t len, int depth) {
   if (dir == NULL)
     return;
   struct dirent *de;
-  while ((de = readdir(dir)) != NULL && !atomic_load(&ctx->progress->cancel) &&
-         !ctx->lib->is_oom) {
+  while ((de = readdir(dir)) != NULL && !atomic_load(&ctx->progress->cancel) && !ctx->lib->is_oom) {
     const char *name = de->d_name;
     if (strcmp(name, ".") == 0 || strcmp(name, "..") == 0)
       continue;
@@ -788,7 +799,8 @@ size_t ipod_lib_smart(const ipod_library_t *lib, ipod_smart_t kind, uint32_t **o
   return n;
 }
 
-size_t ipod_lib_search(const ipod_library_t *lib, const char *needle, size_t max, ipod_hit_t **out) {
+size_t
+ipod_lib_search(const ipod_library_t *lib, const char *needle, size_t max, ipod_hit_t **out) {
   *out = NULL;
   if (lib == NULL || lib->ntracks == 0 || needle == NULL || needle[0] == '\0' || max == 0)
     return 0;
@@ -1266,9 +1278,8 @@ static int cmp_album_order(uint32_t a, uint32_t b, const void *ctx) {
 
 static int cmp_group(uint32_t a, uint32_t b, const void *ctx) {
   const group_ctx_t *g = ctx;
-  int c = cmp_str_ids(g->lib,
-                      ipod_lib_field_value(g->lib, g->field, a),
-                      ipod_lib_field_value(g->lib, g->field, b));
+  int c = cmp_str_ids(
+      g->lib, ipod_lib_field_value(g->lib, g->field, a), ipod_lib_field_value(g->lib, g->field, b));
   if (c == 0 && g->field == IPOD_FIELD_ALBUM)
     c = cmp_str_ids(g->lib, g->lib->tracks[a].album_artist, g->lib->tracks[b].album_artist);
   return c != 0 ? c : cmp_index(a, b);

@@ -20,27 +20,36 @@
 #include "ipod_text.h"
 #include "stb_image.h"
 
-#define ART_TASK_STACK       12288
-#define ART_TASK_PRIO        SYS_PRIO_BACKGROUND // the player (SERVICE_HI) always wins
-#define ART_TASK_CORE        SYS_CORE_RADIO
-#define ART_MAX_FILE_BYTES   (8u * 1024u * 1024u)
+#define ART_TASK_STACK     12288
+#define ART_TASK_PRIO      SYS_PRIO_BACKGROUND // the player (SERVICE_HI) always wins
+#define ART_TASK_CORE      SYS_CORE_RADIO
+#define ART_MAX_FILE_BYTES (8u * 1024u * 1024u)
 // stb_image holds the whole RGB image (3 B/px); progressive JPEGs also keep
 // 16-bit coefficients for every component (another 6 B/px). Stay well inside PSRAM.
-#define ART_MAX_PIXELS       (2400u * 1000u)
-#define ART_MAX_PIXELS_PROG  (1200u * 1000u)
-#define ART_PATH_LEN         512
-#define REFL_TOP_ALPHA_PCT   40
-#define SHUTDOWN_WAIT_MS     2000
-#define JPEG_SOF2            0xC2
-#define JPEG_SOS             0xDA
+#define ART_MAX_PIXELS      (2400u * 1000u)
+#define ART_MAX_PIXELS_PROG (1200u * 1000u)
+#define ART_PATH_LEN        512
+#define REFL_TOP_ALPHA_PCT  40
+#define SHUTDOWN_WAIT_MS    2000
+#define JPEG_SOF2           0xC2
+#define JPEG_SOS            0xDA
 
 static const char *TAG = "IPOD_ART";
 
 // Looked up next to the song when it has no embedded picture. FAT is
 // case-insensitive; the capitalised names help on case-sensitive hosts.
 static const char *const FOLDER_ART[] = {
-    "cover.jpg", "folder.jpg", "front.jpg", "cover.png", "folder.png", "front.png",
-    "Cover.jpg", "Folder.jpg", "Front.jpg", "AlbumArt.jpg", "albumart.jpg",
+    "cover.jpg",
+    "folder.jpg",
+    "front.jpg",
+    "cover.png",
+    "folder.png",
+    "front.png",
+    "Cover.jpg",
+    "Folder.jpg",
+    "Front.jpg",
+    "AlbumArt.jpg",
+    "albumart.jpg",
 };
 
 typedef struct {
@@ -57,7 +66,7 @@ typedef struct {
 static SemaphoreHandle_t s_mu;
 static SemaphoreHandle_t s_wake;
 static SemaphoreHandle_t s_exited; ///< given by the task as its very last act
-static bool s_running;           ///< touched by the controlling (UI) thread only
+static bool s_running;             ///< touched by the controlling (UI) thread only
 static bool s_quit;
 static art_req_t s_req;
 static uint32_t s_next_id;

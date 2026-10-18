@@ -1,0 +1,75 @@
+# Screenshot tour for the README:
+#   tests/e2e/run_e2e.sh build/sim/hb_sim docs/tour.hbs <demo card> docs/screenshots
+wait_until scanning = 0 15000
+wait 2200
+shot $SHOTS/01_main.png
+select Music
+wait 400
+shot $SHOTS/02_music.png
+select Artists
+wait 400
+shot $SHOTS/03_artists.png
+select Aurora Vale
+wait 400
+select Northern Lights
+wait 400
+shot $SHOTS/04_album.png
+select Polar Night
+wait_until art = 1 3000
+wait 2500
+shot $SHOTS/05_now_playing.png
+press up
+wait 200
+shot $SHOTS/06_volume.png
+wait 2200
+press ok
+wait 300
+shot $SHOTS/07_scrubber.png
+press ok
+repeat 4 press up
+wait 200
+shot $SHOTS/08_rating.png
+press ok
+press ok
+press back
+wait 500
+shot $SHOTS/09_song_list.png
+press back
+press back
+press back
+press back
+wait 400
+select Settings
+wait 400
+shot $SHOTS/10_settings.png
+select EQ
+wait 400
+shot $SHOTS/11_eq.png
+press back
+press back
+select Music
+select Search...
+repeat 13 press right
+press ok
+press right
+press ok
+press down
+wait 300
+shot $SHOTS/12_search.png
+press back
+press back
+press back
+select Extras
+select Clock
+wait 500
+shot $SHOTS/13_clock.png
+press back
+press back
+down ok
+down back
+wait 1000
+up ok
+up back
+wait 300
+shot $SHOTS/14_hold.png
+quit

@@ -29,16 +29,16 @@
 
 #include "esp_log.h"
 
-#define DEFAULT_RATE_HZ   44100u
-#define DMA_LEAD_MS       46   // the device keeps 8 x 256 frames queued
-#define SDL_QUEUE_MS      80
-#define SDL_POLL_US       2000
-#define CLICK_MS          30
-#define CLICK_HZ          2000
-#define CLICK_AMPLITUDE   9000
-#define WAV_HEADER_LEN    44
-#define US_PER_SEC        1000000LL
-#define NS_PER_US         1000LL
+#define DEFAULT_RATE_HZ 44100u
+#define DMA_LEAD_MS     46 // the device keeps 8 x 256 frames queued
+#define SDL_QUEUE_MS    80
+#define SDL_POLL_US     2000
+#define CLICK_MS        30
+#define CLICK_HZ        2000
+#define CLICK_AMPLITUDE 9000
+#define WAV_HEADER_LEN  44
+#define US_PER_SEC      1000000LL
+#define NS_PER_US       1000LL
 
 typedef enum {
   OUT_NULL = 0,

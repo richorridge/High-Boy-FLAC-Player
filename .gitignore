@@ -3,3 +3,5 @@ build-*/
 /out/
 *.ppm
 __pycache__/
+integration/esp32p4_check/.work/
+/sdcard/

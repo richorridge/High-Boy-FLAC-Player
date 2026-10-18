@@ -21,8 +21,8 @@ extern "C" {
 typedef uint32_t ipod_str_t;
 #define IPOD_STR_EMPTY 0u
 
-#define IPOD_RG_NONE          INT16_MIN
-#define IPOD_RATING_MAX       5
+#define IPOD_RG_NONE           INT16_MIN
+#define IPOD_RATING_MAX        5
 #define IPOD_TRACK_COMPILATION 0x01u
 
 #define IPOD_LIB_UNKNOWN_ARTIST "Unknown Artist"
@@ -101,9 +101,9 @@ typedef struct {
 
 /** @brief Shared between the scanning task and the UI, hence atomic. */
 typedef struct {
-  bool skip_stats;           ///< input: do not read statistics from `previous`
-  atomic_bool cancel;        ///< set by the caller to abort a scan
-  atomic_uint files_found;   ///< audio files discovered so far
+  bool skip_stats;         ///< input: do not read statistics from `previous`
+  atomic_bool cancel;      ///< set by the caller to abort a scan
+  atomic_uint files_found; ///< audio files discovered so far
   atomic_uint files_parsed;
 } ipod_scan_progress_t;
 

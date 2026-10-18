@@ -137,8 +137,7 @@ void vTaskDelete(TaskHandle_t task) {
 void vTaskDelay(TickType_t ticks) {
   struct timespec ts = {.tv_sec = (time_t)(ticks / MS_PER_SEC),
                         .tv_nsec = (long)(ticks % MS_PER_SEC) * NS_PER_MS};
-  while (nanosleep(&ts, &ts) != 0 && errno == EINTR) {
-  }
+  while (nanosleep(&ts, &ts) != 0 && errno == EINTR) {}
 }
 
 TickType_t xTaskGetTickCount(void) {

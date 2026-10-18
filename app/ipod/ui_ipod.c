@@ -129,14 +129,14 @@
 #define ACCEL_START_REPEATS 4
 #define ACCEL_MAX_SHIFT     6
 #define ACCEL_LIST_FRACTION 20
-#define SEEK_STEP_1_MS  1500
-#define SEEK_STEP_2_MS  3000
-#define SEEK_STEP_3_MS  6000
-#define SEEK_REPEATS_1  10
-#define SEEK_REPEATS_2  25
-#define SCRUB_STEP_1_MS 2000
-#define SCRUB_STEP_2_MS 5000
-#define SCRUB_STEP_3_MS 10000
+#define SEEK_STEP_1_MS      1500
+#define SEEK_STEP_2_MS      3000
+#define SEEK_STEP_3_MS      6000
+#define SEEK_REPEATS_1      10
+#define SEEK_REPEATS_2      25
+#define SCRUB_STEP_1_MS     2000
+#define SCRUB_STEP_2_MS     5000
+#define SCRUB_STEP_3_MS     10000
 
 static const char *TAG = "UI_IPOD";
 
@@ -526,9 +526,7 @@ static void header_create(lv_obj_t *scr) {
 
 static void header_update(void) {
   const ipod_view_t *v = top_view();
-  const char *title = s.is_scan_modal ? "Updating Library"
-                      : v != NULL     ? v->title
-                                      : "iPod";
+  const char *title = s.is_scan_modal ? "Updating Library" : v != NULL ? v->title : "iPod";
   set_label_if_changed(s.title, title);
 
   const bool playing = s.st.state == IPOD_PLAYER_PLAYING;
@@ -658,8 +656,8 @@ static void row_set(row_w_t *r,
     lv_obj_set_style_bg_opa(r->obj, selected ? LV_OPA_COVER : LV_OPA_TRANSP, 0);
     lv_obj_set_style_text_color(r->text, lv_color_hex(selected ? C_SEL_TEXT : C_TEXT), 0);
     // The highlighted row scrolls a long title, as the iPod does.
-    lv_label_set_long_mode(
-        r->text, selected ? LV_LABEL_LONG_MODE_SCROLL_CIRCULAR : LV_LABEL_LONG_MODE_DOTS);
+    lv_label_set_long_mode(r->text,
+                           selected ? LV_LABEL_LONG_MODE_SCROLL_CIRCULAR : LV_LABEL_LONG_MODE_DOTS);
   }
   if (state_changed || strcmp(r->right_cache, right_buf) != 0) {
     ipod_text_copy(r->right_cache, sizeof(r->right_cache), right_buf);
@@ -667,9 +665,10 @@ static void row_set(row_w_t *r,
     const bool is_symbol = icon != IPOD_ICON_NONE;
     lv_obj_set_style_text_font(
         r->right, is_symbol ? &lv_font_montserrat_12 : &lv_font_montserrat_14, 0);
-    uint32_t color = selected ? C_SEL_TEXT : (icon == IPOD_ICON_SPEAKER ? C_BLUE
-                                              : is_symbol               ? C_ARROW
-                                                                        : C_SUBTEXT);
+    uint32_t color = selected ? C_SEL_TEXT
+                              : (icon == IPOD_ICON_SPEAKER ? C_BLUE
+                                 : is_symbol               ? C_ARROW
+                                                           : C_SUBTEXT);
     lv_obj_set_style_text_color(r->right, lv_color_hex(color), 0);
     lv_obj_update_layout(r->right);
     int32_t right_w = right_buf[0] != '\0' ? lv_obj_get_width(r->right) + 6 : 0;
@@ -973,15 +972,15 @@ static void np_update(uint32_t now) {
   }
   char buf[32];
   if (st->queue_count > 0)
-    snprintf(buf, sizeof(buf), "%u of %u", (unsigned)(st->queue_pos + 1), (unsigned)st->queue_count);
+    snprintf(
+        buf, sizeof(buf), "%u of %u", (unsigned)(st->queue_pos + 1), (unsigned)st->queue_count);
   else
     buf[0] = '\0';
   set_label_if_changed(s.np_counter, buf);
 
   if (s.wheel_mode != WHEEL_VOLUME && (int32_t)(now - s.mode_until) >= 0)
     s.wheel_mode = WHEEL_VOLUME;
-  const bool show_volume =
-      s.wheel_mode == WHEEL_VOLUME && (int32_t)(now - s.volume_until) < 0;
+  const bool show_volume = s.wheel_mode == WHEEL_VOLUME && (int32_t)(now - s.volume_until) < 0;
   const bool show_rating = s.wheel_mode == WHEEL_RATING;
   const bool show_shuffle = s.wheel_mode == WHEEL_SHUFFLE;
   const bool show_progress = !show_volume && !show_rating && !show_shuffle;
@@ -1020,10 +1019,8 @@ static void np_update(uint32_t now) {
       lv_image_set_src(s.np_stars[i], i < rating ? &s_star_full_dsc : &s_star_empty_dsc);
   }
   if (show_shuffle) {
-    snprintf(buf,
-             sizeof(buf),
-             LV_SYMBOL_SHUFFLE "  Shuffle: %s",
-             ipod_shuffle_name(s.settings.shuffle));
+    snprintf(
+        buf, sizeof(buf), LV_SYMBOL_SHUFFLE "  Shuffle: %s", ipod_shuffle_name(s.settings.shuffle));
     set_label_if_changed(s.np_mode_label, buf);
   }
 }
@@ -1090,8 +1087,8 @@ static void search_render(void) {
   snprintf(count, sizeof(count), "%u", (unsigned)s.nhits);
   set_label_if_changed(s.sr_count, s.query[0] != '\0' ? count : "");
   for (int i = 0; i < KEYS_VISIBLE; i++) {
-    const int k =
-        ((s.key_idx + i - KEYS_VISIBLE / 2) % SEARCH_KEY_COUNT + SEARCH_KEY_COUNT) % SEARCH_KEY_COUNT;
+    const int k = ((s.key_idx + i - KEYS_VISIBLE / 2) % SEARCH_KEY_COUNT + SEARCH_KEY_COUNT) %
+                  SEARCH_KEY_COUNT;
     const char c = SEARCH_KEYS[k];
     char txt[8];
     if (c == SEARCH_KEY_DEL)
@@ -1140,8 +1137,13 @@ static void search_render(void) {
           break;
       }
     }
-    row_set(&s.rows[i], true, text, kind, IPOD_ICON_NONE,
-            s.is_results_focus && (int)idx == s.hit_sel, width);
+    row_set(&s.rows[i],
+            true,
+            text,
+            kind,
+            IPOD_ICON_NONE,
+            s.is_results_focus && (int)idx == s.hit_sel,
+            width);
   }
 }
 
@@ -1748,7 +1750,7 @@ static void wheel(int dir) {
           break;
         }
         case WHEEL_SCRUB: {
-          int32_t step = s.wheel_repeats < 8 ? SCRUB_STEP_1_MS
+          int32_t step = s.wheel_repeats < 8    ? SCRUB_STEP_1_MS
                          : s.wheel_repeats < 20 ? SCRUB_STEP_2_MS
                                                 : SCRUB_STEP_3_MS;
           ipod_player_seek_by(inc * step);
@@ -1770,8 +1772,8 @@ static void wheel(int dir) {
           break;
         }
         case WHEEL_SHUFFLE:
-          s.settings.shuffle =
-              (ipod_shuffle_t)((s.settings.shuffle + IPOD_SHUFFLE_COUNT + inc) % IPOD_SHUFFLE_COUNT);
+          s.settings.shuffle = (ipod_shuffle_t)((s.settings.shuffle + IPOD_SHUFFLE_COUNT + inc) %
+                                                IPOD_SHUFFLE_COUNT);
           ipod_player_set_shuffle(s.settings.shuffle);
           save_settings();
           s.mode_until = now + MODE_TIMEOUT_MS;
@@ -1880,8 +1882,7 @@ static void ipod_input(const input_event_t *ev, void *ctx) {
   }
 
   const ipod_view_t *v = top_view();
-  const bool search_keys =
-      v != NULL && v->kind == IPOD_VIEW_SEARCH && !s.is_results_focus;
+  const bool search_keys = v != NULL && v->kind == IPOD_VIEW_SEARCH && !s.is_results_focus;
   switch (b) {
     case INPUT_BTN_UP:
     case INPUT_BTN_DOWN: {
@@ -2157,12 +2158,12 @@ void ui_ipod_debug(ui_ipod_debug_t *out) {
         ipod_text_copy(out->selected,
                        sizeof(out->selected),
                        ipod_lib_disp(s.lib,
-                                     s.hits[s.hit_sel].kind == IPOD_HIT_ARTIST ? t->album_artist
+                                     s.hits[s.hit_sel].kind == IPOD_HIT_ARTIST  ? t->album_artist
                                      : s.hits[s.hit_sel].kind == IPOD_HIT_ALBUM ? t->album
-                                                                                 : t->title));
+                                                                                : t->title));
     } else {
-      snprintf(out->selected, sizeof(out->selected), "key:%c query:%s", SEARCH_KEYS[s.key_idx],
-               s.query);
+      snprintf(
+          out->selected, sizeof(out->selected), "key:%c query:%s", SEARCH_KEYS[s.key_idx], s.query);
     }
   } else if (v != NULL && is_list_view(v)) {
     out->selected_index = v->sel;

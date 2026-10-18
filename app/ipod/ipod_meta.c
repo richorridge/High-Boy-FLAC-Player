@@ -14,26 +14,26 @@
 
 #include "ipod_text.h"
 
-#define FLAC_MAGIC          "fLaC"
-#define FLAC_MAGIC_LEN      4
-#define ID3_MAGIC           "ID3"
-#define ID3_HEADER_LEN      10
-#define ID3_FOOTER_FLAG     0x10
-#define ID3_FOOTER_LEN      10
-#define BLOCK_HEADER_LEN    4
-#define BLOCK_LAST_FLAG     0x80
-#define BLOCK_TYPE_MASK     0x7F
-#define BLOCK_STREAMINFO    0
-#define BLOCK_VORBIS        4
-#define BLOCK_PICTURE       6
-#define STREAMINFO_LEN      34
-#define MAX_BLOCKS          128
-#define MAX_COMMENTS        1024
-#define COMMENT_BUF_LEN     512
-#define PICTURE_FIXED_LEN   16 // width, height, depth, colours
-#define PICTURE_MAX_FIELD   (64u * 1024u)
-#define MS_PER_SEC          1000u
-#define PIC_TYPE_UNSET      0xFFFFFFFFu
+#define FLAC_MAGIC        "fLaC"
+#define FLAC_MAGIC_LEN    4
+#define ID3_MAGIC         "ID3"
+#define ID3_HEADER_LEN    10
+#define ID3_FOOTER_FLAG   0x10
+#define ID3_FOOTER_LEN    10
+#define BLOCK_HEADER_LEN  4
+#define BLOCK_LAST_FLAG   0x80
+#define BLOCK_TYPE_MASK   0x7F
+#define BLOCK_STREAMINFO  0
+#define BLOCK_VORBIS      4
+#define BLOCK_PICTURE     6
+#define STREAMINFO_LEN    34
+#define MAX_BLOCKS        128
+#define MAX_COMMENTS      1024
+#define COMMENT_BUF_LEN   512
+#define PICTURE_FIXED_LEN 16 // width, height, depth, colours
+#define PICTURE_MAX_FIELD (64u * 1024u)
+#define MS_PER_SEC        1000u
+#define PIC_TYPE_UNSET    0xFFFFFFFFu
 
 typedef struct {
   FILE *f;

@@ -21,20 +21,20 @@
 #include "dr_flac.h"
 #include "ipod_dsp.h"
 
-#define PLAYER_TASK_STACK  16384
-#define PLAYER_TASK_PRIO   SYS_PRIO_SERVICE_HI
+#define PLAYER_TASK_STACK 16384
+#define PLAYER_TASK_PRIO  SYS_PRIO_SERVICE_HI
 // Core 0: on the UI core a full-frame LVGL redraw (SYS_PRIO_RENDER) could starve
 // the ~46 ms I2S DMA queue; the radios are idle while the iPod app runs.
-#define PLAYER_TASK_CORE   SYS_CORE_RADIO
-#define CHUNK_OUT_SAMPLES  1024 // ~23 ms at 44.1 kHz: seek/pause latency
-#define MAX_DECIM          4
-#define MAX_CHANNELS       8
-#define PATH_LEN           512
-#define IDLE_WAIT_MS       100
-#define PAUSE_SILENCE_MS   2000 // keep the amp fed briefly, then power the stream down
-#define SHUTDOWN_WAIT_MS   1500
-#define MS_PER_SEC         1000u
-#define CDB_PER_DB         100.0f
+#define PLAYER_TASK_CORE  SYS_CORE_RADIO
+#define CHUNK_OUT_SAMPLES 1024 // ~23 ms at 44.1 kHz: seek/pause latency
+#define MAX_DECIM         4
+#define MAX_CHANNELS      8
+#define PATH_LEN          512
+#define IDLE_WAIT_MS      100
+#define PAUSE_SILENCE_MS  2000 // keep the amp fed briefly, then power the stream down
+#define SHUTDOWN_WAIT_MS  1500
+#define MS_PER_SEC        1000u
+#define CDB_PER_DB        100.0f
 
 static const char *TAG = "IPOD_PLAYER";
 
@@ -66,7 +66,7 @@ static bool s_dsp_dirty;
 static bool s_stats_dirty;
 static uint32_t s_play_seq;
 static uint32_t s_stream_rate; ///< 0 while the I2S stream is closed
-static atomic_bool s_click; ///< set by the UI thread, consumed by the decoder
+static atomic_bool s_click;    ///< set by the UI thread, consumed by the decoder
 
 static void player_task(void *arg);
 
@@ -493,8 +493,8 @@ static void decoder_open_current(decoder_t *d) {
     return;
 
   d->fl = drflac_open_file(path, NULL);
-  if (d->fl != NULL && (d->fl->channels == 0 || d->fl->channels > MAX_CHANNELS ||
-                        d->fl->sampleRate == 0)) {
+  if (d->fl != NULL &&
+      (d->fl->channels == 0 || d->fl->channels > MAX_CHANNELS || d->fl->sampleRate == 0)) {
     decoder_close(d);
   }
   if (d->fl == NULL) {

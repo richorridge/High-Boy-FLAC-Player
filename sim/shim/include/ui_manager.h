@@ -22,12 +22,7 @@ extern "C" {
 
 // The real enum has ~170 entries; the simulator only knows the two screens it
 // hosts. SCREEN_GAMES_MENU is the TentacleOS "APPS" menu the iPod returns to.
-typedef enum {
-  SCREEN_NONE,
-  SCREEN_GAMES_MENU,
-  SCREEN_IPOD,
-  SCREEN_COUNT
-} screen_id_t;
+typedef enum { SCREEN_NONE, SCREEN_GAMES_MENU, SCREEN_IPOD, SCREEN_COUNT } screen_id_t;
 
 bool ui_acquire(void);
 void ui_release(void);

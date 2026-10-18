@@ -35,11 +35,11 @@ typedef enum {
  *        play in (which differs when shuffling) and the current position.
  */
 typedef struct {
-  uint32_t *tracks;    ///< library track indices, in the order they were listed
-  uint32_t *groups;    ///< album id per track (for album shuffle), may be NULL
-  uint32_t *order;     ///< play order: indices into tracks[]
+  uint32_t *tracks; ///< library track indices, in the order they were listed
+  uint32_t *groups; ///< album id per track (for album shuffle), may be NULL
+  uint32_t *order;  ///< play order: indices into tracks[]
   size_t count;
-  size_t pos;          ///< position in order[]
+  size_t pos; ///< position in order[]
   ipod_shuffle_t shuffle;
   ipod_repeat_t repeat;
   uint32_t rng;
@@ -54,11 +54,8 @@ void ipod_queue_free(ipod_queue_t *q);
  *        @p start is SIZE_MAX and shuffle is on, the first track is random too.
  * @param groups  optional album id per track, used by album shuffle.
  */
-bool ipod_queue_set(ipod_queue_t *q,
-                    const uint32_t *tracks,
-                    const uint32_t *groups,
-                    size_t count,
-                    size_t start);
+bool ipod_queue_set(
+    ipod_queue_t *q, const uint32_t *tracks, const uint32_t *groups, size_t count, size_t start);
 
 /** @brief Change shuffle mode, keeping the current track playing. */
 void ipod_queue_set_shuffle(ipod_queue_t *q, ipod_shuffle_t mode);

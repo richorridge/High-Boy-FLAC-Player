@@ -36,7 +36,7 @@ typedef struct {
   uint32_t track; ///< library index of the current song
   uint32_t pos_ms;
   uint32_t dur_ms;
-  size_t queue_pos;   ///< 0-based position in the Now Playing list
+  size_t queue_pos; ///< 0-based position in the Now Playing list
   size_t queue_count;
   uint32_t track_seq; ///< bumps whenever the current song changes
   uint32_t end_seq;   ///< bumps when the list plays out (iPod leaves Now Playing)

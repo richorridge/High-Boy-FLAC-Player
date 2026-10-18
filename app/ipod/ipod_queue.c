@@ -35,11 +35,8 @@ void ipod_queue_free(ipod_queue_t *q) {
   q->pos = 0;
 }
 
-bool ipod_queue_set(ipod_queue_t *q,
-                    const uint32_t *tracks,
-                    const uint32_t *groups,
-                    size_t count,
-                    size_t start) {
+bool ipod_queue_set(
+    ipod_queue_t *q, const uint32_t *tracks, const uint32_t *groups, size_t count, size_t start) {
   ipod_queue_free(q);
   if (count == 0 || tracks == NULL)
     return false;
