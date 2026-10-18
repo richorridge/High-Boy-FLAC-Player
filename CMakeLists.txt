@@ -1,11 +1,11 @@
-# Copyright (c) 2026 High Boy iPod app contributors
+# Copyright (c) 2026 High Boy FLAC iPod contributors
 # SPDX-License-Identifier: GPL-3.0-or-later
 #
 # Host build: the app's core modules, unit tests, and the SDL2 High Boy
 # simulator. The device build is TentacleOS's ESP-IDF build (see integration/).
 
 cmake_minimum_required(VERSION 3.16)
-project(highboy_ipod C)
+project(highboy_flac_ipod C)
 
 set(CMAKE_C_STANDARD 11)
 set(CMAKE_C_STANDARD_REQUIRED ON)

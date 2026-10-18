@@ -1,4 +1,4 @@
-// Copyright (c) 2026 High Boy iPod app contributors
+// Copyright (c) 2026 High Boy FLAC iPod contributors
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by

@@ -1,4 +1,4 @@
-// Copyright (c) 2026 High Boy iPod app contributors
+// Copyright (c) 2026 High Boy FLAC iPod contributors
 // SPDX-License-Identifier: GPL-3.0-or-later
 //
 // Link stubs for the TentacleOS functions the app calls. Their declarations

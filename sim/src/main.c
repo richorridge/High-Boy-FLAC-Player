@@ -1,4 +1,4 @@
-// Copyright (c) 2026 High Boy iPod app contributors
+// Copyright (c) 2026 High Boy FLAC iPod contributors
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -749,7 +749,7 @@ int main(int argc, char **argv) {
       layout_hits();
       const int win_w = LCD_W * s_scale + 2 * BEZEL;
       const int win_h = LCD_H * s_scale + BEZEL + PAD_AREA_H;
-      s_win = SDL_CreateWindow("High Boy - iPod (simulator)",
+      s_win = SDL_CreateWindow("High Boy FLAC iPod (simulator)",
                                SDL_WINDOWPOS_CENTERED,
                                SDL_WINDOWPOS_CENTERED,
                                win_w,

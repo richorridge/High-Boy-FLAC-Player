@@ -6479,7 +6479,7 @@ static drflac_bool32 drflac__read_and_decode_metadata(drflac_read_proc onRead, d
     /* We'll be doing some memory allocations here against untrusted data. We'll do a basic validation check that they don't exceed the size of the file. */
     if (onTell != NULL && onSeek != NULL) {
         /*
-        High Boy iPod patch: we sit on byte 42 *of the FLAC stream*, which is further into the file
+        High Boy FLAC iPod patch: we sit on byte 42 *of the FLAC stream*, which is further into the file
         when an ID3v2 tag precedes it. Use the real position so the seek below and every absolute
         offset derived from runningFilePos (seektable, first frame) stay correct.
         */

@@ -1,4 +1,4 @@
-// Copyright (c) 2026 High Boy iPod app contributors
+// Copyright (c) 2026 High Boy FLAC iPod contributors
 // SPDX-License-Identifier: GPL-3.0-or-later
 //
 // Unit tests for the iPod app's core (non-UI) modules. Run with the folder

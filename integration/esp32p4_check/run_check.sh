@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Copyright (c) 2026 High Boy iPod app contributors
+# Copyright (c) 2026 High Boy FLAC iPod contributors
 # SPDX-License-Identifier: GPL-3.0-or-later
 #
 # Cross-compile and link the iPod app for the High Boy's ESP32-P4.

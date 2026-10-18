@@ -1,4 +1,4 @@
-# Copyright (c) 2026 High Boy iPod app contributors
+# Copyright (c) 2026 High Boy FLAC iPod contributors
 # SPDX-License-Identifier: GPL-3.0-or-later
 #
 # ESP32-P4 build check: compiles and links the iPod app with ESP-IDF 5.5.3,

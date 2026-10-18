@@ -1,4 +1,4 @@
-# Copyright (c) 2026 High Boy iPod app contributors
+# Copyright (c) 2026 High Boy FLAC iPod contributors
 # SPDX-License-Identifier: GPL-3.0-or-later
 if(NOT DEFINED ENV{TENTACLEOS})
   message(FATAL_ERROR "set TENTACLEOS to a TentacleOS checkout (see run_check.sh)")

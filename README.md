@@ -1,6 +1,6 @@
-# iPod for the High Boy
+# High Boy FLAC iPod
 
-A FLAC music player for the **High Code High Boy** that looks and works like an
+**High Boy FLAC iPod** is a FLAC music player for the **High Code High Boy** that looks and works like an
 **iPod classic (colour)**. It plays FLAC files from the microSD card, lets you
 browse by artist, album, song, genre, composer and playlist, and has the
 iPod's controls: Now Playing with cover art, scrubbing, ratings, shuffle,
@@ -185,7 +185,7 @@ integration/              TentacleOS installer and ESP32-P4 build check
   until the time has been synced.
 * TentacleOS opens at most 5 SD files at once (`VFS_MAX_FILES`). The app uses
   at most 4 at the same moment.
-* `dr_flac` is patched (marked "High Boy iPod patch") so it can seek in FLAC
+* `dr_flac` is patched (marked "High Boy FLAC iPod patch") so it can seek in FLAC
   files that start with an ID3v2 tag. Without the patch, such files failed to
   open.
 * TentacleOS ships its own SDL simulator (`tools/hle`), but at the time of
